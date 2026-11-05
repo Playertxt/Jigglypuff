@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "classic", "name": "Classic", "desc": "Calm grays with a blue accent.",
+      "light": { "bg": "#f4f4f2", "surface": "#fdfdfc", "surface2": "#f1f1ee", "border": "#e3e3e0", "text": "#0b0b0b", "text2": "#52514e", "muted": "#7d7b75",
+        "accent": "#256abf", "onAccent": "#ffffff", "accent2": "#3f8fe8", "danger": "#c73232", "onDanger": "#ffffff", "good": "#0ca30c", "warning": "#e0a000", "nav": "#f4f4f2", "navActive": "#fdfdfc" },
+      "dark": { "bg": "#0f0f0e", "surface": "#1a1a19", "surface2": "#232321", "border": "#2b2b29", "text": "#f0efec", "text2": "#c3c2b7", "muted": "#8f8d86",
+        "accent": "#2f74c8", "onAccent": "#ffffff", "accent2": "#5b9cf0", "danger": "#c73232", "onDanger": "#ffffff", "good": "#3fc23f", "warning": "#fab219", "nav": "#0f0f0e", "navActive": "#1a1a19" },
+      "shapes": { "button": { "kind": "rounded", "radius": 8 }, "card": { "kind": "rounded", "radius": 12 }, "input": { "kind": "rounded", "radius": 8 }, "chip": { "kind": "pill", "radius": 12 },
+        "nav": { "kind": "rounded", "radius": 8 }, "dialog": { "kind": "rounded", "radius": 14 }, "icon": { "kind": "rounded", "radius": 9 } },
+      "button": { "style": "filled", "press": "shrink", "hover": "brighten", "border": 1, "shadow": 0 },
+      "card": { "style": "solid", "shadow": 1 },
+      "font": "system", "textSize": 100, "density": "comfortable", "motion": "normal", "background": "plain"
+    },
+    {
+      "id": "jigglypuff", "name": "Jigglypuff", "desc": "Soft pink and round, like the app icon.",
+      "light": { "bg": "#fff8f9", "surface": "#fff0f3", "surface2": "#f5e4e8", "border": "#ead6db", "text": "#22191c", "text2": "#514347", "muted": "#837377",
+        "accent": "#b8246a", "onAccent": "#ffffff", "accent2": "#e0569b", "danger": "#ba1a1a", "onDanger": "#ffffff", "good": "#2e8b57", "warning": "#c77700", "nav": "#fbeaee", "navActive": "#ffd9e2" },
+      "dark": { "bg": "#191113", "surface": "#22191c", "surface2": "#31282a", "border": "#3c3235", "text": "#efdfe2", "text2": "#d5c2c6", "muted": "#9e8c91",
+        "accent": "#ffb0cd", "onAccent": "#640038", "accent2": "#ff7eb3", "danger": "#ffb4ab", "onDanger": "#690005", "good": "#5cc98a", "warning": "#f0b44c", "nav": "#261d20", "navActive": "#5a3f47" },
+      "shapes": { "button": { "kind": "pill", "radius": 20 }, "card": { "kind": "rounded", "radius": 20 }, "input": { "kind": "rounded", "radius": 12 }, "chip": { "kind": "pill", "radius": 12 },
+        "nav": { "kind": "pill", "radius": 16 }, "dialog": { "kind": "rounded", "radius": 28 }, "icon": { "kind": "rounded", "radius": 12 } },
+      "button": { "style": "filled", "press": "jelly", "hover": "lift", "border": 1, "shadow": 0 },
+      "card": { "style": "solid", "shadow": 0 },
+      "font": "system", "textSize": 100, "density": "comfortable", "motion": "normal", "background": "plain"
+    },
+    {
+      "id": "bubblegum", "name": "Bubblegum", "desc": "Pastel gradients and bouncy pills.",
+      "light": { "bg": "#fdf2fb", "surface": "#ffffff", "text": "#3b1f45", "accent": "#d946ef", "onAccent": "#ffffff", "accent2": "#8b5cf6", "nav": "#f8e6f6", "navActive": "#ffffff" },
+      "dark": { "bg": "#1d1426", "surface": "#2a1d36", "text": "#f6e8ff", "accent": "#e879f9", "onAccent": "#2a0533", "accent2": "#a78bfa", "nav": "#1d1426", "navActive": "#3a2a4a" },
+      "shapes": { "button": { "kind": "pill", "radius": 20 }, "card": { "kind": "rounded", "radius": 24 }, "input": { "kind": "pill", "radius": 18 }, "chip": { "kind": "pill", "radius": 12 },
+        "nav": { "kind": "pill", "radius": 18 }, "dialog": { "kind": "rounded", "radius": 28 }, "icon": { "kind": "squircle", "radius": 14 } },
+      "button": { "style": "gradient", "press": "bounce", "hover": "glow", "border": 0, "shadow": 2 },
+      "card": { "style": "solid", "shadow": 2 },
+      "font": "system", "textSize": 100, "density": "comfortable", "motion": "lively", "background": "gradient"
+    },
+    {
+      "id": "neon", "name": "Midnight Neon", "desc": "Glowing outlines with cut corners.",
+      "light": { "bg": "#eef0ff", "surface": "#ffffff", "text": "#14143a", "accent": "#0067e0", "onAccent": "#ffffff", "accent2": "#c400a3", "nav": "#e3e6ff", "navActive": "#ffffff" },
+      "dark": { "bg": "#07070f", "surface": "#10101e", "surface2": "#181830", "border": "#262648", "text": "#e8e8ff", "text2": "#a9a9d6", "muted": "#6f6fa0",
+        "accent": "#00e5ff", "onAccent": "#001015", "accent2": "#ff2bd6", "danger": "#ff3864", "onDanger": "#18000a", "good": "#39ff88", "warning": "#ffd23f", "nav": "#0a0a16", "navActive": "#181830" },
+      "shapes": { "button": { "kind": "bevel", "radius": 8 }, "card": { "kind": "bevel", "radius": 12 }, "input": { "kind": "bevel", "radius": 6 }, "chip": { "kind": "bevel", "radius": 6 },
+        "nav": { "kind": "bevel", "radius": 6 }, "dialog": { "kind": "bevel", "radius": 16 }, "icon": { "kind": "bevel", "radius": 8 } },
+      "button": { "style": "neon", "press": "glow", "hover": "glow", "border": 2, "shadow": 0 },
+      "card": { "style": "outline", "shadow": 3 },
+      "font": "condensed", "textSize": 100, "density": "comfortable", "motion": "lively", "background": "grid"
+    },
+    {
+      "id": "paper", "name": "Paper", "desc": "Ink on paper: serif type, sharp edges, no shadows.",
+      "light": { "bg": "#f5f1e8", "surface": "#fffdf7", "surface2": "#f1ebdd", "border": "#d9d0bd", "text": "#1f1b16", "text2": "#4e463b", "muted": "#81776a",
+        "accent": "#1f1b16", "onAccent": "#fffdf7", "accent2": "#8a5a2b", "danger": "#a3261c", "onDanger": "#ffffff", "good": "#3d7a2a", "warning": "#b7791f", "nav": "#efe9dc", "navActive": "#fffdf7" },
+      "dark": { "bg": "#1b1915", "surface": "#24211c", "surface2": "#2d2a24", "border": "#3d3931", "text": "#ece6d8", "text2": "#c4bcab", "muted": "#8f8776",
+        "accent": "#ece6d8", "onAccent": "#1b1915", "accent2": "#d9a66b", "danger": "#e06c5f", "onDanger": "#1b1915", "good": "#8cc477", "warning": "#e3b25a", "nav": "#1b1915", "navActive": "#2d2a24" },
+      "shapes": { "button": { "kind": "rounded", "radius": 2 }, "card": { "kind": "rounded", "radius": 2 }, "input": { "kind": "rounded", "radius": 2 }, "chip": { "kind": "rounded", "radius": 2 },
+        "nav": { "kind": "rounded", "radius": 2 }, "dialog": { "kind": "rounded", "radius": 3 }, "icon": { "kind": "rounded", "radius": 2 } },
+      "button": { "style": "outline", "press": "sink", "hover": "brighten", "border": 2, "shadow": 0 },
+      "card": { "style": "outline", "shadow": 0 },
+      "font": "serif", "textSize": 100, "density": "spacious", "motion": "calm", "background": "plain"
+    },
+    {
+      "id": "forest", "name": "Forest", "desc": "Greens and leaf-shaped corners.",
+      "light": { "bg": "#eef3ec", "surface": "#fbfdf9", "text": "#17261b", "accent": "#2f7d4f", "onAccent": "#ffffff", "accent2": "#8fbf4d", "good": "#2f7d4f", "warning": "#c98a1a", "nav": "#e4ece1", "navActive": "#fbfdf9" },
+      "dark": { "bg": "#0e1611", "surface": "#16211a", "surface2": "#1e2c23", "text": "#e3efe5", "accent": "#5fbf85", "onAccent": "#062010", "accent2": "#b5d96a", "good": "#5fbf85", "nav": "#0e1611", "navActive": "#1e2c23" },
+      "shapes": { "button": { "kind": "leaf", "radius": 14 }, "card": { "kind": "leaf", "radius": 22 }, "input": { "kind": "leaf", "radius": 10 }, "chip": { "kind": "leaf", "radius": 10 },
+        "nav": { "kind": "leaf", "radius": 12 }, "dialog": { "kind": "leaf", "radius": 26 }, "icon": { "kind": "leaf", "radius": 12 } },
+      "button": { "style": "soft", "press": "ripple", "hover": "lift", "border": 0, "shadow": 1 },
+      "card": { "style": "solid", "shadow": 1 },
+      "font": "system", "textSize": 100, "density": "comfortable", "motion": "calm", "background": "dots"
+    },
+    {
+      "id": "sunset", "name": "Sunset", "desc": "Warm oranges, squircles and chunky 3D buttons.",
+      "light": { "bg": "#fff4ec", "surface": "#ffffff", "text": "#2b1710", "accent": "#e8502f", "onAccent": "#ffffff", "accent2": "#e83e8c", "warning": "#e8a317", "nav": "#ffe8da", "navActive": "#ffffff" },
+      "dark": { "bg": "#1a0f0c", "surface": "#261713", "surface2": "#33201a", "text": "#ffe9df", "accent": "#ff7a50", "onAccent": "#2a0d04", "accent2": "#ff5fa2", "nav": "#1a0f0c", "navActive": "#33201a" },
+      "shapes": { "button": { "kind": "squircle", "radius": 16 }, "card": { "kind": "squircle", "radius": 24 }, "input": { "kind": "squircle", "radius": 14 }, "chip": { "kind": "pill", "radius": 12 },
+        "nav": { "kind": "squircle", "radius": 14 }, "dialog": { "kind": "squircle", "radius": 28 }, "icon": { "kind": "squircle", "radius": 14 } },
+      "button": { "style": "raised", "press": "sink", "hover": "lift", "border": 0, "shadow": 2 },
+      "card": { "style": "elevated", "shadow": 2 },
+      "font": "system", "textSize": 100, "density": "comfortable", "motion": "normal", "background": "gradient"
+    },
+    {
+      "id": "ocean", "name": "Ocean Glass", "desc": "Frosted glass over deep blue.",
+      "light": { "bg": "#e6f1fb", "surface": "#ffffff", "text": "#0d2236", "accent": "#0a6fd8", "onAccent": "#ffffff", "accent2": "#00b3b8", "nav": "#d9e9f8", "navActive": "#ffffff" },
+      "dark": { "bg": "#06121f", "surface": "#0d1f33", "surface2": "#13293f", "text": "#e2f0ff", "accent": "#4fb3ff", "onAccent": "#021526", "accent2": "#2de0d4", "nav": "#06121f", "navActive": "#13293f" },
+      "shapes": { "button": { "kind": "rounded", "radius": 14 }, "card": { "kind": "rounded", "radius": 20 }, "input": { "kind": "rounded", "radius": 12 }, "chip": { "kind": "pill", "radius": 12 },
+        "nav": { "kind": "rounded", "radius": 14 }, "dialog": { "kind": "rounded", "radius": 24 }, "icon": { "kind": "rounded", "radius": 12 } },
+      "button": { "style": "glass", "press": "ripple", "hover": "shine", "border": 1, "shadow": 1 },
+      "card": { "style": "glass", "shadow": 2 },
+      "font": "system", "textSize": 100, "density": "comfortable", "motion": "normal", "background": "gradient"
+    },
+    {
+      "id": "terminal", "name": "Terminal", "desc": "Green on black, square and compact.",
+      "light": { "bg": "#f0f5ee", "surface": "#fbfffa", "text": "#0b2a0b", "accent": "#117a2e", "onAccent": "#ffffff", "accent2": "#0a8f6a", "good": "#117a2e", "nav": "#e6efe3", "navActive": "#fbfffa" },
+      "dark": { "bg": "#050805", "surface": "#0a100a", "surface2": "#101a10", "border": "#1d3a1d", "text": "#b6ffb6", "text2": "#7fdc7f", "muted": "#4f9a4f",
+        "accent": "#33ff66", "onAccent": "#001a06", "accent2": "#00cc88", "danger": "#ff5555", "onDanger": "#1a0000", "good": "#33ff66", "warning": "#ffcc00", "nav": "#050805", "navActive": "#101a10" },
+      "shapes": { "button": { "kind": "square", "radius": 0 }, "card": { "kind": "square", "radius": 0 }, "input": { "kind": "square", "radius": 0 }, "chip": { "kind": "square", "radius": 0 },
+        "nav": { "kind": "square", "radius": 0 }, "dialog": { "kind": "square", "radius": 0 }, "icon": { "kind": "square", "radius": 0 } },
+      "button": { "style": "outline", "press": "sink", "hover": "glow", "border": 1, "shadow": 0 },
+      "card": { "style": "outline", "shadow": 0 },
+      "font": "mono", "textSize": 100, "density": "compact", "motion": "off", "background": "grid"
+    },
+    {
+      "id": "pop", "name": "Bold Pop", "desc": "Thick outlines, hard shadows and bright colors.",
+      "light": { "bg": "#fff6d6", "surface": "#ffffff", "surface2": "#fff0b8", "border": "#111111", "text": "#111111", "text2": "#333333", "muted": "#555555",
+        "accent": "#ff5a5f", "onAccent": "#111111", "accent2": "#4ecdc4", "danger": "#ff3b30", "onDanger": "#111111", "good": "#1f9d5c", "warning": "#e09a00", "nav": "#ffe066", "navActive": "#ffffff" },
+      "dark": { "bg": "#17171c", "surface": "#22222a", "surface2": "#2c2c36", "border": "#f4f4f4", "text": "#f4f4f4", "text2": "#d0d0d8", "muted": "#a0a0ac",
+        "accent": "#ff6b6f", "onAccent": "#111111", "accent2": "#4ecdc4", "danger": "#ff5148", "onDanger": "#111111", "good": "#3ad08a", "warning": "#ffc233", "nav": "#22222a", "navActive": "#34343f" },
+      "shapes": { "button": { "kind": "rounded", "radius": 6 }, "card": { "kind": "rounded", "radius": 8 }, "input": { "kind": "rounded", "radius": 6 }, "chip": { "kind": "rounded", "radius": 6 },
+        "nav": { "kind": "rounded", "radius": 6 }, "dialog": { "kind": "rounded", "radius": 10 }, "icon": { "kind": "rounded", "radius": 6 } },
+      "button": { "style": "pop", "press": "sink", "hover": "lift", "border": 2, "shadow": 3 },
+      "card": { "style": "pop", "shadow": 0 },
+      "font": "system", "textSize": 100, "density": "comfortable", "motion": "lively", "background": "plain"
+    }
+  ]
+}

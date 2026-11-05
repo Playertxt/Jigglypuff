@@ -13,6 +13,7 @@ export const store = {
     history: null,
     drive: "",
     software: null,
+    look: null,
 };
 const driveListeners = [];
 export function onDriveChange(fn) {

@@ -1,7 +1,7 @@
 import { post, Settings } from "../api.js";
 import { h, icon, shortPath } from "../dom.js";
 import { applyTheme } from "../theme.js";
-import { Page, rerender, store } from "../store.js";
+import { go, Page, rerender, store } from "../store.js";
 import { btn, pickFolder, showError, toast, toggle } from "../ui.js";
 
 async function save(patch: Partial<Settings>, quiet = false): Promise<void> {
@@ -42,7 +42,9 @@ export const settingsPage: Page = {
     const theme = h("div", { class: "seg" }, (["system", "light", "dark"] as const).map((t) =>
       h("button", { type: "button", class: s.theme === t ? "on" : "", onclick: () => save({ theme: t }, true) }, t[0].toUpperCase() + t.slice(1))));
     root.append(h("div", { class: "section-title" }, "Appearance"),
-      h("div", { class: "card" }, row("Theme", "System follows your Windows setting.", theme)));
+      h("div", { class: "card" }, row("Theme", "System follows your Windows setting.", theme),
+        row("Colors, shapes and effects", "Pick one of 10 themes or change any color, button shape and effect.",
+          btn("Customize", { size: "sm", icon: "palette", onclick: () => go("appearance") }))));
 
     root.append(h("div", { class: "section-title" }, "Deleting"),
       h("div", { class: "card" },

@@ -12,6 +12,8 @@ import { duplicatesPage } from "./pages/duplicates.js";
 import { startupPage } from "./pages/startup.js";
 import { historyPage } from "./pages/history.js";
 import { settingsPage } from "./pages/settings.js";
+import { appearancePage } from "./pages/appearance.js";
+import { loadPresets, presetLook, sanitize } from "./look.js";
 
 const NAV: Array<{ id: string; label: string; icon: string } | null> = [
   { id: "overview", label: "Overview", icon: "home" },
@@ -25,7 +27,7 @@ const NAV: Array<{ id: string; label: string; icon: string } | null> = [
   { id: "duplicates", label: "Duplicates", icon: "copy" },
 ];
 
-for (const p of [overviewPage, cleanerPage, appsPage, leftoversPage, largePage, duplicatesPage, startupPage, historyPage, settingsPage]) registerPage(p);
+for (const p of [overviewPage, cleanerPage, appsPage, leftoversPage, largePage, duplicatesPage, startupPage, historyPage, settingsPage, appearancePage]) registerPage(p);
 
 /** Picks which drive every scan looks at. Hidden on a PC with a single drive. */
 function drivePicker(info: Info): HTMLElement | null {
@@ -59,6 +61,7 @@ function sidebar(info: Info): HTMLElement {
     NAV.map((n) => (n ? item(n) : h("div", { class: "nav-gap" }))),
     h("div", { class: "sidebar-foot" },
       item({ id: "history", label: "History", icon: "clock" }),
+      item({ id: "appearance", label: "Appearance", icon: "palette" }),
       item({ id: "settings", label: "Settings", icon: "sliders" }),
       adminPill));
   const mark2 = (id: string) => items.forEach((b, k) => b.classList.toggle("active", k === id));
@@ -116,6 +119,8 @@ async function boot(): Promise<void> {
   }
   store.info = info;
   store.settings = info.settings;
+  await loadPresets();
+  store.look = info.settings.look ? sanitize(info.settings.look, presetLook("classic")) : presetLook("classic");
   applyTheme(info.settings.theme);
   const main = h("main", { class: "main", id: "main" });
   clear(app, h("div", { class: "app" }, sidebar(info), main));

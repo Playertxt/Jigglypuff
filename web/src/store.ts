@@ -1,4 +1,5 @@
 // Shared state and navigation.
+import type { Look } from "./look.js";
 import type { App, Drive, DupGroup, FileItem, HistoryEntry, Info, JunkResult, LeftoverGroup, Program, Settings, SmartResult, StartupItem } from "./api.js";
 
 export const store = {
@@ -17,6 +18,8 @@ export const store = {
   /** The drive every scan looks at (a root like D:\); "" means every drive. */
   drive: "",
   software: null as { drive: string; programs: Program[] } | null,
+  /** The theme in use, with every change the user made. */
+  look: null as Look | null,
 };
 
 const driveListeners: Array<(d: string) => void> = [];

@@ -15,18 +15,14 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SdCard
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -94,7 +90,7 @@ private fun AppRow(vm: AppModel, a: AppInfo, right: @Composable () -> Unit = { U
 @Composable
 private fun UninstallButton(a: AppInfo) {
     val start = rememberStart()
-    if (a.canUninstall) OutlinedButton(onClick = { start(Device.uninstallIntent(a.pkg)) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)) { Text("Uninstall") }
+    if (a.canUninstall) SecondaryButton(onClick = { start(Device.uninstallIntent(a.pkg)) }) { Text("Uninstall") }
 }
 
 @Composable
@@ -113,7 +109,7 @@ private fun AppList(vm: AppModel) {
                 OutlinedTextField(query, { query = it }, Modifier.weight(1f), placeholder = { Text("Search apps") }, singleLine = true,
                     leadingIcon = { Icon(Icons.Outlined.Search, null) }, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search))
                 androidx.compose.foundation.layout.Box {
-                    TextButton(onClick = { sortOpen = true }) { Text(when (sort) { "size" -> "By size"; "used" -> "By last use"; else -> "By name" }) }
+                    TextLinkButton(onClick = { sortOpen = true }) { Text(when (sort) { "size" -> "By size"; "used" -> "By last use"; else -> "By name" }) }
                     DropdownMenu(sortOpen, { sortOpen = false }) {
                         listOf("name" to "By name", "size" to "By size", "used" to "By last use").forEach { (k, l) ->
                             DropdownMenuItem(text = { Text(l) }, onClick = { sort = k; sortOpen = false })
@@ -208,7 +204,7 @@ private fun CacheList(vm: AppModel) {
                 list.forEachIndexed { i, a ->
                     if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     RowItem(a.label, "Cache ${a.cacheBytes.fmtSize()} · app and data ${a.size.fmtSize()}", leading = { AppIcon(a.pkg, a.label) }) {
-                        FilledTonalButton(onClick = { start(Device.appSettingsIntent(a.pkg)) }) { Text("Clear") }
+                        TonalButton(onClick = { start(Device.appSettingsIntent(a.pkg)) }) { Text("Clear") }
                     }
                 }
             }
@@ -237,14 +233,14 @@ private fun ApkList(vm: AppModel) {
                         style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         val size = list.filter { it.path in sel }.sumOf { it.size }
-                        Button(enabled = sel.isNotEmpty(), onClick = {
+                        PrimaryButton(enabled = sel.isNotEmpty(), onClick = {
                             confirm = CleanRequest("Remove ${plural(sel.size, "installer")}?", "Removed APK files",
                                 list.filter { it.path in sel }.map { Target(it.path, it.size, trash = true) })
                         }) {
                             Icon(Icons.Outlined.Delete, null, Modifier.padding(end = 8.dp))
                             Text(if (sel.isEmpty()) "Remove selected" else "Remove ${size.fmtSize()}")
                         }
-                        OutlinedButton(onClick = { vm.scanApks() }, enabled = vm.busy == null) { Text("Scan again") }
+                        SecondaryButton(onClick = { vm.scanApks() }, enabled = vm.busy == null) { Text("Scan again") }
                     }
                     Panel {
                         list.forEachIndexed { i, a ->

@@ -18,15 +18,12 @@ import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.VideoFile
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -72,7 +69,7 @@ fun FilesScreen(vm: AppModel, sub: String?) {
 private fun <T> Choice(label: String, options: List<Pair<T, String>>, onPick: (T) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        OutlinedButton(onClick = { open = true }) { Text(label) }
+        SecondaryButton(onClick = { open = true }) { Text(label) }
         DropdownMenu(open, { open = false }) {
             options.forEach { (v, l) -> DropdownMenuItem(text = { Text(l) }, onClick = { onPick(v); open = false }) }
         }
@@ -89,7 +86,7 @@ private fun FileList(vm: AppModel, files: List<Item>, sel: Set<String>, onSel: (
             RowItem(f.name, "${prettyPath(vm, f.parent)} · ${relTime(f.modified)}", leading = { IconBox(fileIcon(f.name)) },
                 onClick = { onSel(if (f.path in sel) sel - f.path else sel + f.path) }) {
                 SizeText(f.size)
-                IconButton(onClick = { openFile(ctx, f.path) }) { Icon(Icons.Outlined.OpenInNew, "Open", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                LookIconButton(onClick = { openFile(ctx, f.path) }) { Icon(Icons.Outlined.OpenInNew, "Open", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                 Checkbox(f.path in sel, onCheckedChange = { onSel(if (it) sel + f.path else sel - f.path) })
             }
         }
@@ -100,7 +97,7 @@ private fun FileList(vm: AppModel, files: List<Item>, sel: Set<String>, onSel: (
 private fun RemoveBar(sel: Set<String>, files: List<Item>, onRemove: () -> Unit, extra: @Composable () -> Unit = {}) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         val size = files.filter { it.path in sel }.sumOf { it.size }
-        Button(enabled = sel.isNotEmpty(), onClick = onRemove) {
+        PrimaryButton(enabled = sel.isNotEmpty(), onClick = onRemove) {
             Icon(Icons.Outlined.Delete, null, Modifier.padding(end = 8.dp))
             Text(if (sel.isEmpty()) "Remove selected" else "Remove ${size.fmtSize()}")
         }
@@ -122,7 +119,7 @@ private fun LargeTab(vm: AppModel) {
                     Choice("Bigger than ${if (mb >= 1024) "${mb / 1024} GB" else "$mb MB"}", listOf(50, 100, 250, 500, 1024, 4096).map { it to (if (it >= 1024) "Bigger than ${it / 1024} GB" else "Bigger than $it MB") }) {
                         vm.updateSettings(vm.settings.copy(largeMinMB = it))
                     }
-                    Button(onClick = { vm.scanLarge() }, enabled = vm.busy == null) {
+                    PrimaryButton(onClick = { vm.scanLarge() }, enabled = vm.busy == null) {
                         Icon(Icons.Outlined.Search, null, Modifier.padding(end = 8.dp))
                         Text(if (vm.large == null) "Scan" else "Scan again")
                     }
@@ -198,7 +195,7 @@ private fun DupsTab(vm: AppModel) {
                     Choice("Bigger than ${if (kb >= 1024) "${kb / 1024} MB" else "$kb KB"}", listOf(100 to "Bigger than 100 KB", 1024 to "Bigger than 1 MB", 10240 to "Bigger than 10 MB", 102400 to "Bigger than 100 MB")) {
                         vm.updateSettings(vm.settings.copy(dupMinKB = it))
                     }
-                    Button(onClick = { vm.scanDups() }, enabled = vm.busy == null) {
+                    PrimaryButton(onClick = { vm.scanDups() }, enabled = vm.busy == null) {
                         Icon(Icons.Outlined.ContentCopy, null, Modifier.padding(end = 8.dp))
                         Text(if (vm.dups == null) "Find duplicates" else "Scan again")
                     }
@@ -225,7 +222,7 @@ private fun DupsTab(vm: AppModel) {
                                 g.files.forEach { f ->
                                     RowItem(f.name, "${prettyPath(vm, f.parent)} · ${relTime(f.modified)}", leading = { IconBox(fileIcon(f.name)) },
                                         onClick = { sel = if (f.path in sel) sel - f.path else sel + f.path }) {
-                                        IconButton(onClick = { openFile(ctx, f.path) }) { Icon(Icons.Outlined.OpenInNew, "Open", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                        LookIconButton(onClick = { openFile(ctx, f.path) }) { Icon(Icons.Outlined.OpenInNew, "Open", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                                         Checkbox(f.path in sel, onCheckedChange = { sel = if (it) sel + f.path else sel - f.path })
                                     }
                                 }

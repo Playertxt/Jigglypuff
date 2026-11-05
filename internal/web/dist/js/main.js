@@ -12,6 +12,8 @@ import { duplicatesPage } from "./pages/duplicates.js";
 import { startupPage } from "./pages/startup.js";
 import { historyPage } from "./pages/history.js";
 import { settingsPage } from "./pages/settings.js";
+import { appearancePage } from "./pages/appearance.js";
+import { loadPresets, presetLook, sanitize } from "./look.js";
 const NAV = [
     { id: "overview", label: "Overview", icon: "home" },
     { id: "cleaner", label: "Junk cleaner", icon: "broom" },
@@ -23,7 +25,7 @@ const NAV = [
     { id: "large", label: "Large & old files", icon: "fileBig" },
     { id: "duplicates", label: "Duplicates", icon: "copy" },
 ];
-for (const p of [overviewPage, cleanerPage, appsPage, leftoversPage, largePage, duplicatesPage, startupPage, historyPage, settingsPage])
+for (const p of [overviewPage, cleanerPage, appsPage, leftoversPage, largePage, duplicatesPage, startupPage, historyPage, settingsPage, appearancePage])
     registerPage(p);
 function drivePicker(info) {
     if (info.drives.length < 2)
@@ -44,7 +46,7 @@ function sidebar(info) {
     const adminPill = info.admin
         ? h("div", { class: "admin-pill ok", title: "Jigglypuff can clean system files and remove apps for all users" }, icon("shieldCheck"), h("span", null, "Running as administrator"))
         : h("div", { class: "admin-pill limited" }, h("div", { style: "display:flex;gap:8px;align-items:center" }, icon("lock"), h("span", null, "Limited mode")), info.canElevate ? btn("Restart as admin", { size: "sm", onclick: restartAdmin }) : null);
-    const el = h("nav", { class: "sidebar", "aria-label": "Sections" }, h("div", { class: "brand" }, mark, h("span", null, "Jigglypuff")), drivePicker(info), NAV.map((n) => (n ? item(n) : h("div", { class: "nav-gap" }))), h("div", { class: "sidebar-foot" }, item({ id: "history", label: "History", icon: "clock" }), item({ id: "settings", label: "Settings", icon: "sliders" }), adminPill));
+    const el = h("nav", { class: "sidebar", "aria-label": "Sections" }, h("div", { class: "brand" }, mark, h("span", null, "Jigglypuff")), drivePicker(info), NAV.map((n) => (n ? item(n) : h("div", { class: "nav-gap" }))), h("div", { class: "sidebar-foot" }, item({ id: "history", label: "History", icon: "clock" }), item({ id: "appearance", label: "Appearance", icon: "palette" }), item({ id: "settings", label: "Settings", icon: "sliders" }), adminPill));
     const mark2 = (id) => items.forEach((b, k) => b.classList.toggle("active", k === id));
     onNavigate(mark2);
     mark2(currentPage());
@@ -95,6 +97,8 @@ async function boot() {
     }
     store.info = info;
     store.settings = info.settings;
+    await loadPresets();
+    store.look = info.settings.look ? sanitize(info.settings.look, presetLook("classic")) : presetLook("classic");
     applyTheme(info.settings.theme);
     const main = h("main", { class: "main", id: "main" });
     clear(app, h("div", { class: "app" }, sidebar(info), main));

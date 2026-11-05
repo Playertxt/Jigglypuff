@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -201,6 +203,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	set.Exclusions = ex
+	set.Look = validLook(set.Look)
 	s.eng.SetSettings(set)
 	if err := s.state.saveSettings(set); err != nil {
 		writeErr(w, 500, err)
@@ -759,9 +762,18 @@ func (s *Server) handleShortcut(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 400, errors.New("unknown place"))
 		return
 	}
-	if err := s.P.CreateShortcut(lnk, exe, "", filepath.Dir(exe), "Jigglypuff — keep your PC clean"); err != nil {
+	if err := s.P.CreateShortcut(lnk, exe, "", filepath.Dir(exe), "Jigglypuff â€” keep your PC clean"); err != nil {
 		writeErr(w, 500, err)
 		return
 	}
 	writeJSON(w, map[string]string{"path": lnk})
+}
+
+// validLook keeps a theme only if it is a small JSON object; the interface checks every value in it.
+func validLook(b json.RawMessage) json.RawMessage {
+	b = bytes.TrimSpace(b)
+	if len(b) == 0 || len(b) > 32<<10 || b[0] != '{' || !json.Valid(b) {
+		return nil
+	}
+	return b
 }

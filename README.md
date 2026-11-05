@@ -23,6 +23,14 @@ A careful, minimal cleaner for Windows 10 and 11, and now for Android phones. On
 - **Duplicates**: compares file contents (SHA-256) and keeps at least one copy of every file.
 - **Startup apps**: turns apps off or on the same reversible way Task Manager does, and removes entries whose program is gone.
 - **History**: lists every clean-up and links to its backups.
+- **Appearance** (PC and Android): make Jigglypuff look the way you like. Changes show up right away and are saved.
+  - **10 themes** to start from, each with its own colors, shapes and button effects: Classic, Jigglypuff, Bubblegum, Midnight Neon, Paper, Forest, Sunset, Ocean Glass, Terminal and Bold Pop. Every theme has a light and a dark version.
+  - **Shapes**: give buttons, cards, text boxes, chips, the sidebar or bottom bar, dialogs and icon tiles their own shape (square, rounded, pill, cut corners, squircle, scooped, notched or leaf) and corner size.
+  - **Button effects**: 9 styles (filled, soft, outline, gradient, glass, neon, 3D, pop, text only), 7 press effects (none, shrink, push down, bounce, jelly, glow, ripple) and, on the PC, 6 hover effects (lift, glow, brighten, grow, shine). Each one is a live sample you can click.
+  - **Every color**: background, cards, lines, three text shades, accent, second accent, danger, safe, warning, sidebar and more, separately for light and dark mode.
+  - **Text and layout**: font, text size, spacing, animation speed and a background pattern.
+  - **Theme codes**: *Copy code* turns your whole theme into a code; *Paste code* in Jigglypuff on another PC or phone gives it the same look. Codes work between the Windows and Android apps. The 10 themes live in [`shared/looks/presets.json`](shared/looks/presets.json), which both apps build in.
+  - **Undo** takes back the last 30 changes.
 
 ## Safety
 
@@ -67,6 +75,7 @@ What it does:
 - **Apps**: every app on the chosen storage with its size and last use, plus **Unused** apps, the **Caches** that are biggest, and **APK files** saved on the storage. Uninstalling goes through Android's own prompt.
 - **Files**: large files, old downloads, and duplicates (compared by SHA-256; one copy is always kept).
 - **More**: Jigglypuff's **trash** (removed files can be put back for 7 days), history, permissions and settings.
+- **Appearance** (in More): the same 10 themes, shapes, button styles and press effects, colors and theme codes as the PC app. See *Appearance* under [Features](#features).
 
 What Android doesn't allow, so it isn't there: clearing other apps' caches directly (Jigglypuff opens each app's storage page instead), silent uninstalls, and anything inside other apps' private folders.
 
@@ -117,4 +126,5 @@ go test ./internal/...
 | `internal/engine` | Scanners, leftover matching, the safety guard and the deletion engine |
 | `internal/server` | Local HTTP API, background jobs, deletion plans, history and settings |
 | `web/` | The interface (TypeScript + CSS), compiled into `internal/web/dist` and embedded in the exe |
-| `android/` | The Android app (Kotlin + Jetpack Compose): `engine/` scans and cleans, `ui/` is the interface |
+| `android/` | The Android app (Kotlin + Jetpack Compose): `engine/` scans and cleans, `look/` is the theme format, `ui/` is the interface |
+| `shared/looks` | The 10 themes, built into both apps |

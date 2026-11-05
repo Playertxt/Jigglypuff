@@ -30,23 +30,17 @@ import androidx.compose.material.icons.outlined.SdCard
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Usb
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -61,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -93,7 +88,7 @@ val LocalSnack = staticCompositionLocalOf { SnackbarHostState() }
 
 @Composable
 fun JigglypuffApp(vm: AppModel) {
-    JigglypuffTheme(vm.settings.theme) {
+    JigglypuffTheme(vm.settings.theme, vm.look) {
         var tab by rememberSaveable { mutableStateOf(Tab.Overview) }
         var sub by remember { mutableStateOf<String?>(null) }
         val snack = remember { SnackbarHostState() }
@@ -103,14 +98,11 @@ fun JigglypuffApp(vm: AppModel) {
         }
         Scaffold(
             topBar = { TopBar(vm) },
-            bottomBar = {
-                NavigationBar {
-                    Tab.entries.forEach {
-                        NavigationBarItem(selected = tab == it, onClick = { tab = it; sub = null }, icon = { Icon(it.icon, null) }, label = { Text(it.label) })
-                    }
-                }
-            },
+            bottomBar = { LookNavBar(Tab.entries, tab) { tab = it; sub = null } },
             snackbarHost = { SnackbarHost(snack) },
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.lookBackground(),
         ) { pad ->
             CompositionLocalProvider(LocalSnack provides snack, LocalNav provides { t, s -> tab = t; sub = s }) {
                 Box(Modifier.padding(pad).fillMaxSize()) {
@@ -125,8 +117,8 @@ fun JigglypuffApp(vm: AppModel) {
             }
         }
         vm.error?.let { msg ->
-            AlertDialog(
-                onDismissRequest = { vm.error = null }, confirmButton = { TextButton(onClick = { vm.error = null }) { Text("OK") } },
+            LookDialog(
+                onDismissRequest = { vm.error = null }, confirmButton = { TextLinkButton(onClick = { vm.error = null }) { Text("OK") } },
                 title = { Text("Something went wrong") }, text = { Text(msg) },
             )
         }
@@ -145,7 +137,7 @@ private fun TopBar(vm: AppModel) {
             }
         },
         actions = { StoragePicker(vm) },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
     )
 }
 
@@ -162,7 +154,7 @@ fun StoragePicker(vm: AppModel) {
     var open by remember { mutableStateOf(false) }
     val sel = vm.selected
     Box(Modifier.padding(end = 8.dp)) {
-        Surface(onClick = { open = true }, shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.secondaryContainer) {
+        Surface(onClick = { open = true }, shape = lookShape("chip"), color = MaterialTheme.colorScheme.secondaryContainer) {
             Row(Modifier.padding(start = 12.dp, end = 8.dp, top = 7.dp, bottom = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(volumeIcon(sel ?: vm.volumes.singleOrNull()), null, Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
@@ -206,7 +198,7 @@ fun CleanDialog(vm: AppModel, req: CleanRequest?, onClose: () -> Unit, onDone: (
     val scope = rememberCoroutineScope()
     val vetted by produceState<Pair<List<Target>, List<String>>?>(null, req) { value = vm.vet(req.targets) }
     val v = vetted
-    AlertDialog(
+    LookDialog(
         onDismissRequest = onClose,
         title = { Text(req.dialogTitle) },
         text = {
@@ -224,7 +216,7 @@ fun CleanDialog(vm: AppModel, req: CleanRequest?, onClose: () -> Unit, onDone: (
                         if (vm.settings.useTrash) "$gone caches and empty folders are deleted for good." else "Everything is deleted for good: the trash is turned off in settings.",
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+                    Surface(shape = lookShape("input"), color = MaterialTheme.colorScheme.surfaceContainerHighest) {
                         LazyColumn(Modifier.heightIn(max = 220.dp).padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             items(ok.take(300)) { t -> Text(prettyPath(vm, t.path), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                             if (ok.size > 300) item { Text("…and ${ok.size - 300} more", style = MaterialTheme.typography.bodySmall) }
@@ -238,9 +230,8 @@ fun CleanDialog(vm: AppModel, req: CleanRequest?, onClose: () -> Unit, onDone: (
             }
         },
         confirmButton = {
-            Button(
+            DangerButton(
                 enabled = v != null && v.first.isNotEmpty(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
                 onClick = {
                     val ok = v!!.first
                     onClose()
@@ -251,7 +242,7 @@ fun CleanDialog(vm: AppModel, req: CleanRequest?, onClose: () -> Unit, onDone: (
                 },
             ) { Text("Remove") }
         },
-        dismissButton = { TextButton(onClick = onClose) { Text("Cancel") } },
+        dismissButton = { TextLinkButton(onClick = onClose) { Text("Cancel") } },
     )
 }
 

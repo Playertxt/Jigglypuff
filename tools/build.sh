@@ -8,6 +8,7 @@ echo "› interface"
 rm -rf internal/web/dist && mkdir -p internal/web/dist
 tsc -p web/tsconfig.json
 cp web/static/* internal/web/dist/
+cp shared/looks/presets.json internal/web/dist/  # the 10 themes, shared with the Android app
 
 echo "› resources"
 python3 tools/mkicon.py web/static/icon.svg cmd/jigglypuff/jigglypuff.ico

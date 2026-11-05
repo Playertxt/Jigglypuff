@@ -1,7 +1,7 @@
 import { post } from "../api.js";
 import { h, icon, shortPath } from "../dom.js";
 import { applyTheme } from "../theme.js";
-import { rerender, store } from "../store.js";
+import { go, rerender, store } from "../store.js";
 import { btn, pickFolder, showError, toast, toggle } from "../ui.js";
 async function save(patch, quiet = false) {
     if (!store.settings)
@@ -43,7 +43,7 @@ export const settingsPage = {
         if (!s || !info)
             return;
         const theme = h("div", { class: "seg" }, ["system", "light", "dark"].map((t) => h("button", { type: "button", class: s.theme === t ? "on" : "", onclick: () => save({ theme: t }, true) }, t[0].toUpperCase() + t.slice(1))));
-        root.append(h("div", { class: "section-title" }, "Appearance"), h("div", { class: "card" }, row("Theme", "System follows your Windows setting.", theme)));
+        root.append(h("div", { class: "section-title" }, "Appearance"), h("div", { class: "card" }, row("Theme", "System follows your Windows setting.", theme), row("Colors, shapes and effects", "Pick one of 10 themes or change any color, button shape and effect.", btn("Customize", { size: "sm", icon: "palette", onclick: () => go("appearance") }))));
         root.append(h("div", { class: "section-title" }, "Deleting"), h("div", { class: "card" }, row("Send personal files to the Recycle Bin", "Leftovers, large files and duplicates can be restored from the Recycle Bin. Junk and cache files are always deleted, because apps recreate them.", toggle(s.recycleUserFiles, (v) => save({ recycleUserFiles: v }), "Send personal files to the Recycle Bin")), row("Keep recent temporary files", "Temporary files changed within this time are skipped, in case an app or installer still needs them.", numberInput(s.tempMinAgeHours, 0, 720, (v) => save({ tempMinAgeHours: v }), "hours")), row("Create a restore point before uninstalling", "Lets you roll Windows back if an uninstaller misbehaves. Windows allows one every 24 hours.", toggle(s.restorePoint, (v) => save({ restorePoint: v }), "Create a restore point before uninstalling"))));
         const ex = s.exclusions ?? [];
         root.append(h("div", { class: "section-title" }, "Protected folders"), h("div", { class: "card" }, h("div", { class: "settings-row" }, h("div", { class: "grow" }, h("div", { class: "label" }, "Never touch these folders"), h("div", { class: "help" }, "Jigglypuff never lists or deletes anything inside them. Windows and program folders are always protected.")), btn("Add folder", { size: "sm", icon: "plus", onclick: async () => { const f = await pickFolder("Protect a folder"); if (f && !ex.includes(f))

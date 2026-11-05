@@ -8,6 +8,7 @@ if (Get-Command tsc -ErrorAction SilentlyContinue) {
   New-Item -ItemType Directory internal\web\dist | Out-Null
   tsc -p web\tsconfig.json
   Copy-Item web\static\* internal\web\dist\
+  Copy-Item shared\looks\presets.json internal\web\dist\  # the 10 themes, shared with the Android app
 } else {
   Write-Host '> tsc not found: using the interface that is already built'
 }

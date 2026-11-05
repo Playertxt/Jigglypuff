@@ -5,7 +5,7 @@ export interface Drive { root: string; label: string; total: number; free: numbe
 export interface Settings {
   theme: "system" | "light" | "dark"; recycleUserFiles: boolean; tempMinAgeHours: number; restorePoint: boolean;
   exclusions: string[] | null; largeMinMB: number; oldDownloadDays: number; dupMinKB: number; dupFolders: string[] | null;
-  largeFolder: string; largeAppData: boolean;
+  largeFolder: string; largeAppData: boolean; look?: unknown;
 }
 export interface Info {
   version: string; user: string; admin: boolean; kind: string; canElevate: boolean; settings: Settings; drives: Drive[];

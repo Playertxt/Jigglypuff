@@ -25,6 +25,8 @@ import com.kabir.jigglypuff.engine.Settings
 import com.kabir.jigglypuff.engine.Target
 import com.kabir.jigglypuff.engine.Tokens
 import com.kabir.jigglypuff.engine.Volume
+import com.kabir.jigglypuff.look.Look
+import com.kabir.jigglypuff.look.Looks
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,6 +41,14 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     private val history = History(app)
 
     var settings by mutableStateOf(Settings.load(app))
+        private set
+
+    /** The theme in use, with every change the user made; saved as soon as it changes. */
+    var look by mutableStateOf(run { Looks.loadPresets(app); Looks.load(app) })
+        private set
+    private val lookUndo = ArrayDeque<Look>()
+    /** How many theme changes Undo can take back. */
+    var lookUndoCount by mutableStateOf(0)
         private set
     var volumes by mutableStateOf(listOf<Volume>())
         private set
@@ -99,6 +109,28 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     fun updateSettings(s: Settings) {
         settings = s
         s.save(ctx)
+    }
+
+    /** Changes the theme. [record] = false for the steps of a drag, after [rememberLook] marked its start. */
+    fun setLook(l: Look, record: Boolean = true) {
+        if (l == look) return
+        if (record) rememberLook()
+        look = l
+        Looks.save(ctx, l)
+    }
+
+    /** Keeps the current theme so Undo can come back to it. */
+    fun rememberLook() {
+        lookUndo.addLast(look)
+        while (lookUndo.size > 30) lookUndo.removeFirst()
+        lookUndoCount = lookUndo.size
+    }
+
+    fun undoLook() {
+        val prev = lookUndo.removeLastOrNull() ?: return
+        look = prev
+        Looks.save(ctx, prev)
+        lookUndoCount = lookUndo.size
     }
 
     fun cancel() {

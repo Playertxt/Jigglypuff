@@ -30,16 +30,11 @@ import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material.icons.outlined.Widgets
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -145,11 +140,11 @@ fun OverviewScreen(vm: AppModel) {
 
 @Composable
 private fun Hero(title: String, text: String, button: String, enabled: Boolean, onClick: () -> Unit) {
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+    Panel(hero = true) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Text(text, style = MaterialTheme.typography.bodyMedium)
-            Button(onClick = onClick, enabled = enabled, modifier = Modifier.padding(top = 4.dp)) {
+            PrimaryButton(onClick = onClick, enabled = enabled, modifier = Modifier.padding(top = 4.dp)) {
                 Icon(Icons.Outlined.Search, null, Modifier.padding(end = 8.dp))
                 Text(button)
             }
@@ -160,7 +155,7 @@ private fun Hero(title: String, text: String, button: String, enabled: Boolean, 
 @Composable
 private fun ResultHero(vm: AppModel, selected: Long, found: Long, canClean: Boolean, onClean: () -> Unit) {
     val res = vm.lastClean
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+    Panel(hero = true) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             when {
                 res != null -> {
@@ -180,11 +175,11 @@ private fun ResultHero(vm: AppModel, selected: Long, found: Long, canClean: Bool
                 }
             }
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (res == null && found > 0) Button(onClick = onClean, enabled = canClean && selected > 0 && vm.busy == null) {
+                if (res == null && found > 0) PrimaryButton(onClick = onClean, enabled = canClean && selected > 0 && vm.busy == null) {
                     Icon(Icons.Outlined.DeleteSweep, null, Modifier.padding(end = 8.dp))
                     Text(if (selected > 0) "Clean ${selected.fmtSize()}" else "Clean")
                 }
-                OutlinedButton(onClick = { vm.scanOverview() }, enabled = vm.busy == null) { Text("Scan again") }
+                SecondaryButton(onClick = { vm.scanOverview() }, enabled = vm.busy == null) { Text("Scan again") }
             }
         }
     }
@@ -251,12 +246,7 @@ fun VolumeCard(vm: AppModel, v: Volume) {
     val share = v.used.toFloat() / v.total.coerceAtLeast(1)
     // A phone needs a couple of GB free to update; a card just shouldn't be nearly full.
     val low = share > 0.95f || (v.primary && v.free < 2L * 1024 * 1024 * 1024)
-    Card(
-        onClick = { vm.pickVolume(if (on) "" else v.id) },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        border = if (on) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-    ) {
+    Panel(selected = on, onClick = { vm.pickVolume(if (on) "" else v.id) }) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(volumeIcon(v), null)
@@ -272,7 +262,7 @@ fun VolumeCard(vm: AppModel, v: Volume) {
                 Text("${v.free.fmtSize()} free", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                 Text("of ${v.total.fmtSize()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (on) TextButton(onClick = { vm.pickVolume("") }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Text("Scan all storage instead") }
+            if (on) TextLinkButton(onClick = { vm.pickVolume("") }) { Text("Scan all storage instead") }
         }
     }
 }

@@ -24,16 +24,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -60,9 +55,10 @@ import kotlinx.coroutines.withContext
 /** A screen's scrolling list with the usual side padding. */
 @Composable
 fun ScreenList(content: LazyListScope.() -> Unit) {
+    val dens = LocalLook.current.dens
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy((12 * dens).dp),
         content = content,
     )
 }
@@ -75,16 +71,6 @@ fun SectionTitle(text: String, meta: String? = null) {
     }
 }
 
-@Composable
-fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        content = content,
-    )
-}
-
 /** A list row: icon, title, description, and whatever goes on the right. */
 @Composable
 fun RowItem(
@@ -94,12 +80,13 @@ fun RowItem(
     onClick: (() -> Unit)? = null,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
+    val dens = LocalLook.current.dens
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 60.dp)
+            .heightIn(min = (60 * dens).dp)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = (10 * dens).dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -116,14 +103,12 @@ fun RowItem(
 
 @Composable
 fun IconBox(icon: ImageVector, tint: Color = MaterialTheme.colorScheme.onSecondaryContainer, bg: Color = MaterialTheme.colorScheme.secondaryContainer) {
-    Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(bg), contentAlignment = Alignment.Center) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(22.dp))
-    }
+    IconTile(icon, tint, bg)
 }
 
 @Composable
 fun Badge(text: String, color: Color) {
-    Surface(shape = RoundedCornerShape(50), color = color.copy(alpha = 0.14f)) {
+    Surface(shape = lookShape("chip"), color = color.copy(alpha = 0.14f)) {
         Row(Modifier.padding(horizontal = 8.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(6.dp).clip(CircleShape).background(color))
             Spacer(Modifier.width(5.dp))
@@ -166,7 +151,7 @@ fun ScanningCard(vm: AppModel, title: String) {
                 style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            OutlinedButton(onClick = vm::cancel) { Text("Stop") }
+            SecondaryButton(onClick = vm::cancel) { Text("Stop") }
         }
     }
 }
@@ -178,7 +163,7 @@ fun EmptyState(icon: ImageVector, title: String, text: String, action: String? =
             IconBox(icon)
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-            if (action != null) Button(onClick = onAction, modifier = Modifier.padding(top = 6.dp)) { Text(action) }
+            if (action != null) PrimaryButton(onClick = onAction, modifier = Modifier.padding(top = 6.dp)) { Text(action) }
         }
     }
 }
@@ -187,15 +172,15 @@ fun EmptyState(icon: ImageVector, title: String, text: String, action: String? =
 @Composable
 fun Note(icon: ImageVector, text: String, action: String? = null, warn: Boolean = false, onDismiss: (() -> Unit)? = null, onAction: () -> Unit = {}) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = lookShape("card"),
         color = if (warn) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(icon, null, modifier = Modifier.size(20.dp))
             Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            if (action != null) TextButton(onClick = onAction) { Text(action) }
-            if (onDismiss != null) androidx.compose.material3.IconButton(onClick = onDismiss) { Icon(Icons.Outlined.Close, "Dismiss") }
+            if (action != null) TextLinkButton(onClick = onAction) { Text(action) }
+            if (onDismiss != null) LookIconButton(onClick = onDismiss) { Icon(Icons.Outlined.Close, "Dismiss") }
         }
     }
 }
@@ -206,8 +191,8 @@ fun AppIcon(pkg: String, label: String, sizeDp: Int = 40) {
     val ctx = LocalContext.current
     val bmp by produceState<ImageBitmap?>(null, pkg) { value = withContext(Dispatchers.IO) { loadIcon(ctx, pkg) } }
     val b = bmp
-    if (b != null) Image(b, null, Modifier.size(sizeDp.dp).clip(RoundedCornerShape(10.dp)))
-    else Box(Modifier.size(sizeDp.dp).clip(RoundedCornerShape(10.dp)).background(avatarColor(label)), contentAlignment = Alignment.Center) {
+    if (b != null) Image(b, null, Modifier.size(sizeDp.dp).clip(lookShape("icon")))
+    else Box(Modifier.size(sizeDp.dp).clip(lookShape("icon")).background(avatarColor(label)), contentAlignment = Alignment.Center) {
         Text(label.trim().take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold)
     }
 }
@@ -236,8 +221,8 @@ fun ApkIcon(path: String, label: String) {
         }
     }
     val b = bmp
-    if (b != null) Image(b, null, Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)))
-    else Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(avatarColor(label)), contentAlignment = Alignment.Center) {
+    if (b != null) Image(b, null, Modifier.size(40.dp).clip(lookShape("icon")))
+    else Box(Modifier.size(40.dp).clip(lookShape("icon")).background(avatarColor(label)), contentAlignment = Alignment.Center) {
         Text(label.trim().take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold)
     }
 }

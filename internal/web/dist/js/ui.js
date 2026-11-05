@@ -1,6 +1,7 @@
 import { get, post, runJob } from "./api.js";
 import { clear, fmtBytes, fmtNum, h, icon, plural, shortPath } from "./dom.js";
 import { currentDrive, driveName, setDrive, store } from "./store.js";
+import { uiScale } from "./look.js";
 export function btn(label, opts = {}) {
     const cls = ["btn"];
     if (opts.kind && opts.kind !== "default")
@@ -148,14 +149,18 @@ export function openMenu(anchor, items) {
     document.querySelectorAll(".menu").forEach((m) => m.remove());
     const menu = h("div", { class: "menu", role: "menu" }, items.map((it) => h("button", { type: "button", role: "menuitem", class: it.danger ? "danger" : "", onclick: () => { close(); it.onclick(); } }, it.icon ? icon(it.icon) : null, it.label)));
     document.body.appendChild(menu);
-    const r = anchor.getBoundingClientRect();
+    const z = uiScale();
+    const b = anchor.getBoundingClientRect();
+    const r = { top: b.top / z, bottom: b.bottom / z, right: b.right / z };
+    const vw = window.innerWidth / z;
+    const vh = window.innerHeight / z;
     const mw = menu.offsetWidth;
     const mh = menu.offsetHeight;
     let top = r.bottom + 6;
-    if (top + mh > window.innerHeight - 8)
+    if (top + mh > vh - 8)
         top = r.top - mh - 6;
     menu.style.top = `${Math.max(8, top)}px`;
-    menu.style.left = `${Math.max(8, Math.min(window.innerWidth - mw - 8, r.right - mw))}px`;
+    menu.style.left = `${Math.max(8, Math.min(vw - mw - 8, r.right - mw))}px`;
     const close = () => {
         menu.remove();
         document.removeEventListener("mousedown", outside, true);
@@ -177,9 +182,10 @@ export function attachTip(el, content) {
         tipEl?.remove();
         tipEl = h("div", { class: "tip", role: "tooltip" }, content());
         document.body.appendChild(tipEl);
+        const z = uiScale();
         const w = tipEl.offsetWidth;
-        tipEl.style.left = `${Math.min(window.innerWidth - w - 8, Math.max(8, x - w / 2))}px`;
-        tipEl.style.top = `${y - tipEl.offsetHeight - 10}px`;
+        tipEl.style.left = `${Math.min(window.innerWidth / z - w - 8, Math.max(8, x / z - w / 2))}px`;
+        tipEl.style.top = `${y / z - tipEl.offsetHeight - 10}px`;
     };
     const hide = () => { tipEl?.remove(); tipEl = null; };
     el.addEventListener("pointermove", (e) => show(e.clientX, el.getBoundingClientRect().top));

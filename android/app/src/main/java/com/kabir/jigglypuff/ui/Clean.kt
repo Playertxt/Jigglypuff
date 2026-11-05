@@ -12,13 +12,10 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FolderOff
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.TaskAlt
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -93,10 +90,10 @@ private fun JunkTab(vm: AppModel) {
                     val total = cats.filter { it.id in sel }.sumOf { it.size }
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Button(enabled = total > 0 || sel.isNotEmpty(), onClick = {
+                            PrimaryButton(enabled = total > 0 || sel.isNotEmpty(), onClick = {
                                 confirm = CleanRequest("Clean ${total.fmtSize()}?", "Cleaned junk files", junkTargets(cats, sel))
                             }) { Text(if (total > 0) "Clean ${total.fmtSize()}" else "Clean selected") }
-                            OutlinedButton(onClick = { vm.scanJunk() }, enabled = vm.busy == null) { Text("Scan again") }
+                            SecondaryButton(onClick = { vm.scanJunk() }, enabled = vm.busy == null) { Text("Scan again") }
                         }
                         Panel {
                             cats.forEachIndexed { i, c ->
@@ -107,7 +104,7 @@ private fun JunkTab(vm: AppModel) {
                                         SizeText(c.size)
                                         SafetyBadge(c.safety)
                                     }
-                                    IconButton(onClick = { open = if (c.id in open) open - c.id else open + c.id }) {
+                                    LookIconButton(onClick = { open = if (c.id in open) open - c.id else open + c.id }) {
                                         Icon(if (c.id in open) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, "Show files")
                                     }
                                     Checkbox(c.id in sel, onCheckedChange = { sel = if (it) sel + c.id else sel - c.id })
@@ -156,14 +153,14 @@ private fun LeftoversTab(vm: AppModel) {
                     )
                     val size = list.filter { it.path in sel }.sumOf { it.size }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(enabled = sel.isNotEmpty(), onClick = {
+                        PrimaryButton(enabled = sel.isNotEmpty(), onClick = {
                             confirm = CleanRequest("Remove ${plural(sel.size, "folder")}?", "Removed leftovers",
                                 list.filter { it.path in sel }.map { Target(it.path, it.size, trash = true, isDir = true) })
                         }) {
                             Icon(Icons.Outlined.Delete, null, Modifier.padding(end = 8.dp))
                             Text(if (sel.isEmpty()) "Remove selected" else "Remove ${size.fmtSize()}")
                         }
-                        OutlinedButton(onClick = { vm.scanLeftovers() }, enabled = vm.busy == null) { Text("Scan again") }
+                        SecondaryButton(onClick = { vm.scanLeftovers() }, enabled = vm.busy == null) { Text("Scan again") }
                     }
                     Panel {
                         list.forEachIndexed { i, l ->

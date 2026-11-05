@@ -19,8 +19,8 @@ android {
         applicationId = "com.kabir.jigglypuff"
         minSdk = 30
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     signingConfigs {
@@ -45,6 +45,9 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // The 10 themes, shared with the Windows app.
+    sourceSets.getByName("main").assets.directories.add("../../shared/looks")
 }
 
 dependencies {

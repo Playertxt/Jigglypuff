@@ -2,55 +2,129 @@ package com.kabir.jigglypuff.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.Density
+import com.kabir.jigglypuff.look.Look
+import com.kabir.jigglypuff.look.Looks
 
-// Jigglypuff pink, matching the app icon.
-private val Light = lightColorScheme(
-    primary = Color(0xFFB8246A), onPrimary = Color.White,
-    primaryContainer = Color(0xFFFFD8E7), onPrimaryContainer = Color(0xFF3E0021),
-    secondary = Color(0xFF74565F), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFD9E2), onSecondaryContainer = Color(0xFF2B151C),
-    tertiary = Color(0xFF7C5635), tertiaryContainer = Color(0xFFFFDCC2),
-    background = Color(0xFFFFF8F9), onBackground = Color(0xFF22191C),
-    surface = Color(0xFFFFF8F9), onSurface = Color(0xFF22191C),
-    surfaceVariant = Color(0xFFF2DDE2), onSurfaceVariant = Color(0xFF514347),
-    surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFFFF0F3),
-    surfaceContainer = Color(0xFFFBEAEE), surfaceContainerHigh = Color(0xFFF5E4E8), surfaceContainerHighest = Color(0xFFEFDFE3),
-    outline = Color(0xFF837377), outlineVariant = Color(0xFFD5C2C6),
-    error = Color(0xFFBA1A1A), errorContainer = Color(0xFFFFDAD6),
-)
+/** A look's colors for one mode, ready for Compose. */
+@Immutable
+data class LookColors(
+    val bg: Color, val surface: Color, val surface2: Color, val border: Color, val text: Color, val text2: Color, val muted: Color,
+    val accent: Color, val onAccent: Color, val accent2: Color, val danger: Color, val onDanger: Color, val good: Color, val warning: Color,
+    val nav: Color, val navActive: Color, val dark: Boolean,
+) {
+    val borderStrong get() = lerp(border, text, 0.18f)
+    /** Accent that reads well as text on the background. */
+    val accentText get() = if (dark) lerp(accent, text, 0.3f) else lerp(accent, text, 0.08f)
+    val dangerText get() = if (dark) lerp(danger, text, 0.35f) else lerp(danger, text, 0.1f)
 
-private val Dark = darkColorScheme(
-    primary = Color(0xFFFFB0CD), onPrimary = Color(0xFF640038),
-    primaryContainer = Color(0xFF8C0E50), onPrimaryContainer = Color(0xFFFFD8E7),
-    secondary = Color(0xFFE2BDC6), onSecondary = Color(0xFF422931),
-    secondaryContainer = Color(0xFF5A3F47), onSecondaryContainer = Color(0xFFFFD9E2),
-    tertiary = Color(0xFFEFBD94), tertiaryContainer = Color(0xFF623F20),
-    background = Color(0xFF191113), onBackground = Color(0xFFEFDFE2),
-    surface = Color(0xFF191113), onSurface = Color(0xFFEFDFE2),
-    surfaceVariant = Color(0xFF514347), onSurfaceVariant = Color(0xFFD5C2C6),
-    surfaceContainerLowest = Color(0xFF130C0E), surfaceContainerLow = Color(0xFF22191C),
-    surfaceContainer = Color(0xFF261D20), surfaceContainerHigh = Color(0xFF31282A), surfaceContainerHighest = Color(0xFF3C3235),
-    outline = Color(0xFF9E8C91), outlineVariant = Color(0xFF514347),
-    error = Color(0xFFFFB4AB), errorContainer = Color(0xFF93000A),
-)
+    companion object {
+        fun of(p: Map<String, String>): LookColors {
+            fun c(k: String) = Color(android.graphics.Color.parseColor(p[k] ?: "#ff00ff"))
+            return LookColors(c("bg"), c("surface"), c("surface2"), c("border"), c("text"), c("text2"), c("muted"), c("accent"), c("onAccent"),
+                c("accent2"), c("danger"), c("onDanger"), c("good"), c("warning"), c("nav"), c("navActive"), Looks.isDark(p["bg"] ?: "#ffffff"))
+        }
+    }
+}
 
-/** Colors for safety badges and the storage meter. */
+fun lerp(a: Color, b: Color, t: Float) = androidx.compose.ui.graphics.lerp(a, b, t)
+
+/** The look in use, with its colors for the current mode. */
+@Immutable
+data class ResolvedLook(val look: Look, val c: LookColors) {
+    /** Spacing factor for rows and buttons. */
+    val dens: Float get() = when (look.density) { "compact" -> 0.82f; "spacious" -> 1.18f; else -> 1f }
+    /** Animation length factor; 0 turns animations off. */
+    val motion: Float get() = when (look.motion) { "off" -> 0f; "calm" -> 1.6f; "lively" -> 0.75f; else -> 1f }
+}
+
+val LocalLook = staticCompositionLocalOf { ResolvedLook(Looks.FALLBACK, LookColors.of(Looks.FALLBACK.light)) }
+private val LocalPhoneFontScale = staticCompositionLocalOf<Float?> { null }
+
+/** Colors for safety badges and the storage meter; they follow the look. */
 object Tones {
-    val safe = Color(0xFF2E8B57)
-    val caution = Color(0xFFC77700)
-    val bad = Color(0xFFD32F2F)
+    val safe: Color @Composable get() = LocalLook.current.c.good
+    val caution: Color @Composable get() = LocalLook.current.c.warning
+    val bad: Color @Composable get() = LocalLook.current.c.danger
+}
+
+fun fontFamily(font: String): FontFamily = when (font) {
+    "condensed" -> FontFamily(androidx.compose.ui.text.font.Typeface(android.graphics.Typeface.create("sans-serif-condensed", android.graphics.Typeface.NORMAL)))
+    "serif" -> FontFamily.Serif
+    "mono" -> FontFamily.Monospace
+    else -> FontFamily.Default
+}
+
+private fun Typography.withFont(f: FontFamily): Typography {
+    fun TextStyle.w() = copy(fontFamily = f)
+    return Typography(
+        displayLarge.w(), displayMedium.w(), displaySmall.w(), headlineLarge.w(), headlineMedium.w(), headlineSmall.w(),
+        titleLarge.w(), titleMedium.w(), titleSmall.w(), bodyLarge.w(), bodyMedium.w(), bodySmall.w(), labelLarge.w(), labelMedium.w(), labelSmall.w(),
+    )
+}
+
+fun colorScheme(c: LookColors) = if (c.dark) darkColorScheme(
+    primary = c.accent, onPrimary = c.onAccent, primaryContainer = lerp(c.surface, c.accent, 0.3f), onPrimaryContainer = c.text,
+    secondary = lerp(c.accent, c.text, 0.3f), onSecondary = c.onAccent,
+    secondaryContainer = lerp(c.surface, c.accent, 0.22f), onSecondaryContainer = lerp(c.accent, c.text, 0.45f),
+    tertiary = c.accent2, tertiaryContainer = lerp(c.surface, c.warning, 0.26f), onTertiaryContainer = c.text,
+    background = c.bg, onBackground = c.text, surface = c.bg, onSurface = c.text, surfaceVariant = c.surface2, onSurfaceVariant = c.text2,
+    surfaceContainerLowest = c.surface, surfaceContainerLow = c.surface, surfaceContainer = c.surface, surfaceContainerHigh = c.surface2,
+    surfaceContainerHighest = lerp(c.surface2, c.text, 0.06f), surfaceBright = c.surface2, surfaceDim = c.bg, surfaceTint = c.accent,
+    outline = c.borderStrong, outlineVariant = c.border, error = c.danger, onError = c.onDanger,
+    errorContainer = lerp(c.surface, c.danger, 0.25f), onErrorContainer = c.text, inverseSurface = c.text, inverseOnSurface = c.bg,
+    inversePrimary = lerp(c.accent, c.bg, 0.4f),
+) else lightColorScheme(
+    primary = c.accent, onPrimary = c.onAccent, primaryContainer = lerp(c.surface, c.accent, 0.18f), onPrimaryContainer = c.text,
+    secondary = lerp(c.accent, c.text, 0.3f), onSecondary = c.onAccent,
+    secondaryContainer = lerp(c.surface, c.accent, 0.14f), onSecondaryContainer = lerp(c.accent, c.text, 0.45f),
+    tertiary = c.accent2, tertiaryContainer = lerp(c.surface, c.warning, 0.22f), onTertiaryContainer = c.text,
+    background = c.bg, onBackground = c.text, surface = c.bg, onSurface = c.text, surfaceVariant = c.surface2, onSurfaceVariant = c.text2,
+    surfaceContainerLowest = c.surface, surfaceContainerLow = c.surface, surfaceContainer = c.surface, surfaceContainerHigh = c.surface2,
+    surfaceContainerHighest = lerp(c.surface2, c.text, 0.06f), surfaceBright = c.surface, surfaceDim = c.surface2, surfaceTint = c.accent,
+    outline = c.borderStrong, outlineVariant = c.border, error = c.danger, onError = c.onDanger,
+    errorContainer = lerp(c.surface, c.danger, 0.18f), onErrorContainer = c.text, inverseSurface = c.text, inverseOnSurface = c.bg,
+    inversePrimary = lerp(c.accent, c.bg, 0.4f),
+)
+
+/** True when the light/dark setting (and the phone, for "system") asks for dark colors. */
+@Composable
+fun wantsDark(theme: String) = when (theme) {
+    "light" -> false
+    "dark" -> true
+    else -> isSystemInDarkTheme()
+}
+
+/** Shows content in a look: its colors, font and text size, plus everything the styled components read. */
+@Composable
+fun LookTheme(look: Look, dark: Boolean, content: @Composable () -> Unit) {
+    val colors = remember(look, dark) { LookColors.of(if (dark) look.dark else look.light) }
+    val resolved = remember(look, colors) { ResolvedLook(look, colors) }
+    val typography = remember(look.font) { Typography().withFont(fontFamily(look.font)) }
+    val d = LocalDensity.current
+    // The phone's own font scale, so a preview inside the app doesn't scale text twice.
+    val base = LocalPhoneFontScale.current ?: d.fontScale
+    CompositionLocalProvider(
+        LocalLook provides resolved, LocalPhoneFontScale provides base,
+        LocalDensity provides Density(d.density, base * look.textSize / 100f),
+    ) {
+        MaterialTheme(colorScheme = colorScheme(colors), typography = typography) {
+            CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides colors.text, content = content)
+        }
+    }
 }
 
 @Composable
-fun JigglypuffTheme(theme: String, content: @Composable () -> Unit) {
-    val dark = when (theme) {
-        "light" -> false
-        "dark" -> true
-        else -> isSystemInDarkTheme()
-    }
-    MaterialTheme(colorScheme = if (dark) Dark else Light, content = content)
-}
+fun JigglypuffTheme(theme: String, look: Look, content: @Composable () -> Unit) = LookTheme(look, wantsDark(theme), content)

@@ -5,6 +5,7 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -28,6 +29,8 @@ type Settings struct {
 	DupFolders       []string `json:"dupFolders"`
 	LargeFolder      string   `json:"largeFolder"`
 	LargeAppData     bool     `json:"largeAppData"` // include AppData in the large file scan
+	// Look is the interface theme (colors, shapes, effects). Only the interface reads it; the server just keeps it.
+	Look json.RawMessage `json:"look,omitempty"`
 }
 
 // DefaultSettings returns the out-of-the-box settings.

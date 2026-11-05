@@ -3,6 +3,7 @@ package com.kabir.jigglypuff.ui
 import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -18,30 +19,27 @@ import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.QueryStats
 import androidx.compose.material.icons.outlined.Restore
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +49,7 @@ import com.kabir.jigglypuff.AppModel
 import com.kabir.jigglypuff.BuildConfig
 import com.kabir.jigglypuff.engine.Device
 import com.kabir.jigglypuff.engine.fmtSize
+import com.kabir.jigglypuff.look.Looks
 import kotlinx.coroutines.launch
 
 @Composable
@@ -66,15 +65,32 @@ fun MoreScreen(vm: AppModel) {
         if (path != null && path !in s.protected) vm.updateSettings(s.copy(protected = s.protected + path))
     }
     val trash = vm.historyList.filter { it.restorable }
+    var page by rememberSaveable { mutableStateOf("") }
+    if (page == "appearance") {
+        BackHandler { page = "" }
+        AppearanceScreen(vm) { page = "" }
+        return
+    }
 
     ScreenList {
+        // Appearance ------------------------------------------------------------------------
+        item { SectionTitle("Appearance") }
+        item {
+            Panel(onClick = { page = "appearance" }) {
+                RowItem("Themes, shapes and colors", "${if (Looks.isPristine(vm.look)) vm.look.name else "Your theme"} · change any color, button shape or effect",
+                    leading = { IconBox(Icons.Outlined.Palette) }) {
+                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
         // Trash and history -----------------------------------------------------------------
         item { SectionTitle("Trash and history") }
         item {
             Panel {
                 RowItem("Jigglypuff's trash", if (trash.isEmpty()) "Empty" else "${trash.sumOf { it.trashBytes }.fmtSize()} from ${plural(trash.size, "clean-up")} · emptied after ${s.trashDays} days",
                     leading = { IconBox(Icons.Outlined.DeleteForever) }) {
-                    if (trash.isNotEmpty()) OutlinedButton(onClick = { askEmpty = true }, enabled = vm.busy == null) { Text("Empty") }
+                    if (trash.isNotEmpty()) SecondaryButton(onClick = { askEmpty = true }, enabled = vm.busy == null) { Text("Empty") }
                 }
                 if (vm.historyList.isEmpty()) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -91,7 +107,7 @@ fun MoreScreen(vm: AppModel) {
                         when (e.state) { "restored" -> add("put back"); "emptied" -> add("trash emptied") }
                     }.joinToString(" · ")
                     RowItem(e.title, detail, leading = { IconBox(Icons.Outlined.History) }) {
-                        if (e.restorable) FilledTonalButton(onClick = {
+                        if (e.restorable) TonalButton(onClick = {
                             vm.restore(e) { n -> scope.launch { snack.showSnackbar("Put back ${plural(n, "item")}") } }
                         }, enabled = vm.busy == null) {
                             Icon(Icons.Outlined.Restore, null, Modifier.padding(end = 6.dp))
@@ -117,13 +133,8 @@ fun MoreScreen(vm: AppModel) {
         item {
             Panel {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Theme", style = MaterialTheme.typography.bodyLarge)
-                    val themes = listOf("system" to "System", "light" to "Light", "dark" to "Dark")
-                    SingleChoiceSegmentedButtonRow {
-                        themes.forEachIndexed { i, (k, l) ->
-                            SegmentedButton(selected = s.theme == k, onClick = { vm.updateSettings(s.copy(theme = k)) }, shape = SegmentedButtonDefaults.itemShape(i, themes.size)) { Text(l) }
-                        }
-                    }
+                    Text("Light and dark", style = MaterialTheme.typography.bodyLarge)
+                    LookSeg(listOf("system", "light", "dark"), s.theme, { it.replaceFirstChar { c -> c.uppercase() } }) { vm.updateSettings(s.copy(theme = it)) }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 RowItem("Use the trash", "Removed files, leftovers and APKs go to a hidden trash folder first, so you can put them back.") {
@@ -140,12 +151,12 @@ fun MoreScreen(vm: AppModel) {
         item {
             Panel {
                 RowItem("Protected folders", "Jigglypuff never removes anything inside these.", leading = { IconBox(Icons.Outlined.Lock) }) {
-                    IconButton(onClick = { pickFolder.launch(null) }) { Icon(Icons.Outlined.Add, "Add a folder") }
+                    LookIconButton(onClick = { pickFolder.launch(null) }) { Icon(Icons.Outlined.Add, "Add a folder") }
                 }
                 s.protected.forEach { p ->
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     RowItem(p.substringAfterLast('/'), prettyPath(vm, p), leading = { IconBox(Icons.Outlined.Folder) }) {
-                        IconButton(onClick = { vm.updateSettings(s.copy(protected = s.protected - p)) }) { Icon(Icons.Outlined.Close, "Remove") }
+                        LookIconButton(onClick = { vm.updateSettings(s.copy(protected = s.protected - p)) }) { Icon(Icons.Outlined.Close, "Remove") }
                     }
                 }
             }
@@ -163,19 +174,19 @@ fun MoreScreen(vm: AppModel) {
         }
     }
 
-    if (askEmpty) AlertDialog(
+    if (askEmpty) LookDialog(
         onDismissRequest = { askEmpty = false },
         title = { Text("Empty the trash?") },
         text = { Text("${trash.sumOf { it.trashBytes }.fmtSize()} will be deleted for good. This can't be undone.") },
-        confirmButton = { Button(onClick = { askEmpty = false; vm.emptyTrash() }) { Text("Empty trash") } },
-        dismissButton = { TextButton(onClick = { askEmpty = false }) { Text("Cancel") } },
+        confirmButton = { PrimaryButton(onClick = { askEmpty = false; vm.emptyTrash() }) { Text("Empty trash") } },
+        dismissButton = { TextLinkButton(onClick = { askEmpty = false }) { Text("Cancel") } },
     )
 }
 
 @Composable
 private fun PermRow(title: String, desc: String, granted: Boolean, icon: androidx.compose.ui.graphics.vector.ImageVector, onAllow: () -> Unit) {
     RowItem(title, desc, leading = { IconBox(icon) }) {
-        if (granted) Badge("Allowed", Tones.safe) else Button(onClick = onAllow) { Text("Allow") }
+        if (granted) Badge("Allowed", Tones.safe) else PrimaryButton(onClick = onAllow) { Text("Allow") }
     }
 }
 
