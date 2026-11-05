@@ -35,7 +35,7 @@ function sidebar(info: Info): HTMLElement {
     items.set(n.id, b);
     return b;
   };
-  const mark = h("div", { class: "brand-mark" }, icon("broom"));
+  const mark = h("img", { class: "brand-mark", src: "icon.svg", alt: "" });
   const adminPill = info.admin
     ? h("div", { class: "admin-pill ok", title: "Jigglypuff can clean system files and remove apps for all users" }, icon("shieldCheck"), h("span", null, "Running as administrator"))
     : h("div", { class: "admin-pill limited" },
