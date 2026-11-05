@@ -12,6 +12,7 @@ if (Get-Command tsc -ErrorAction SilentlyContinue) {
   Write-Host '> tsc not found: using the interface that is already built'
 }
 
+python toolsmksyso.py cmdjigglypuff
 Write-Host '> Jigglypuff.exe'
 New-Item -ItemType Directory -Force dist | Out-Null
 $env:CGO_ENABLED = '0'
