@@ -1,6 +1,6 @@
 # Jigglypuff
 
-A careful, minimal PC cleaner for Windows 10 and 11. Jigglypuff is a single portable file (`Jigglypuff.exe`) and installs nothing.
+A careful, minimal cleaner for Windows 10 and 11, and now for Android phones. On Windows, Jigglypuff is a single portable file (`Jigglypuff.exe`) and installs nothing. On Android it's `Jigglypuff.apk` — see [Android app](#android-app).
 
 ## Features
 
@@ -52,6 +52,35 @@ If SmartScreen says "Windows protected your PC" (the file isn't code-signed), cl
 
 Jigglypuff's own data (settings, history, backups and the window's browser profile) lives in `%LOCALAPPDATA%\Jigglypuff`. To reset Jigglypuff, delete that folder.
 
+## Android app
+
+`Jigglypuff.apk` runs on Android 11 and newer. Download it on your phone and open it; Android asks you to allow installing apps from your browser or file manager the first time.
+
+The first time you scan, Jigglypuff asks for two permissions on Android's own screens:
+- **All files access**: to look through your storage.
+- **Usage access** (optional): for app sizes, caches and when you last opened each app.
+
+What it does:
+- **Storage to scan**: the menu at the top picks internal storage, an SD card or a USB drive (or all of them). Tap a storage card on the Overview to do the same.
+- **Overview**: one scan, then what's safe to clean (pre-ticked) and what's worth a look.
+- **Clean**: thumbnail caches, temporary and log files, empty folders, installers of apps you already have, and **leftovers** of removed apps (`Android/media/<package>` and folders no installed app uses).
+- **Apps**: every app on the chosen storage with its size and last use, plus **Unused** apps, the **Caches** that are biggest, and **APK files** saved on the storage. Uninstalling goes through Android's own prompt.
+- **Files**: large files, old downloads, and duplicates (compared by SHA-256; one copy is always kept).
+- **More**: Jigglypuff's **trash** (removed files can be put back for 7 days), history, permissions and settings.
+
+What Android doesn't allow, so it isn't there: clearing other apps' caches directly (Jigglypuff opens each app's storage page instead), silent uninstalls, and anything inside other apps' private folders.
+
+Safety: everything removed is listed in a confirmation first. A guard refuses Android's own folders, the storage roots, other apps' private folders and your protected folders, and every item is checked again just before it's removed. Photos, documents and other personal files go to a hidden trash folder (with `.nomedia`, so they don't show up in your gallery) instead of being deleted.
+
+Building it needs the Android SDK (API 37) and JDK 17 or newer:
+
+```
+cd android
+gradlew assembleRelease
+```
+
+Release builds are signed with the key in `~/.jigglypuff/keystore.properties` when it exists.
+
 ## Building from source
 
 Requirements:
@@ -88,3 +117,4 @@ go test ./internal/...
 | `internal/engine` | Scanners, leftover matching, the safety guard and the deletion engine |
 | `internal/server` | Local HTTP API, background jobs, deletion plans, history and settings |
 | `web/` | The interface (TypeScript + CSS), compiled into `internal/web/dist` and embedded in the exe |
+| `android/` | The Android app (Kotlin + Jetpack Compose): `engine/` scans and cleans, `ui/` is the interface |

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Covers internal storage, SD cards and USB drives. -->
+    <root-path name="storage" path="storage" />
+</paths>
