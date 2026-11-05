@@ -2,6 +2,18 @@
 
 A careful, minimal cleaner for Windows 10 and 11, and now for Android phones. On Windows, Jigglypuff is a single portable file (`Jigglypuff.exe`) and installs nothing. On Android it's `Jigglypuff.apk` — see [Android app](#android-app).
 
+## Download
+
+| | Windows (PC) | Android (phone) |
+|---|---|---|
+| **Download** | [**Jigglypuff.exe**](https://github.com/Playertxt/Jigglypuff/releases/download/v1.2.0/Jigglypuff.exe) | [**Jigglypuff.apk**](https://github.com/Playertxt/Jigglypuff/releases/download/android-v1.1.0/Jigglypuff.apk) |
+| **Version** | 1.2.0 | 1.1.0 |
+| **Release notes** | [Windows v1.2.0](https://github.com/Playertxt/Jigglypuff/releases/tag/v1.2.0) | [Android v1.1.0](https://github.com/Playertxt/Jigglypuff/releases/tag/android-v1.1.0) |
+| **Needs** | Windows 10 or 11 | Android 11 or newer |
+| **How to install** | Nothing to install: double-click it. See [Running](#running). | Open the file on your phone. See [Android app](#android-app). |
+
+The Windows and Android apps are separate downloads with their own version numbers. Every version of both is on the [Releases](https://github.com/Playertxt/Jigglypuff/releases) page: tags that start with `v` are Windows, tags that start with `android-v` are Android.
+
 ## Features
 
 - **Pick a drive to scan**: the *Drive to scan* menu in the sidebar (or a click on a drive card on the Overview) limits every scan to one drive: junk, leftovers, old downloads, large files, duplicates, the Recycle Bin and the software list. *All drives* scans everything, as before.
