@@ -1,7 +1,7 @@
 // Shared interface components.
 import { CleanResult, get, Plan, PlanRequest, post, Progress, runJob } from "./api.js";
 import { Child, clear, fmtBytes, fmtNum, h, icon, plural, shortPath } from "./dom.js";
-import { store } from "./store.js";
+import { currentDrive, driveName, setDrive, store } from "./store.js";
 
 type BtnKind = "primary" | "danger" | "ghost" | "default";
 
@@ -86,6 +86,15 @@ export function scanningCard(title: string, onCancel?: () => void): { el: HTMLEl
 export function empty(iconName: string, title: string, text: Child, ...actions: Child[]): HTMLElement {
   return h("div", { class: "empty" }, h("div", { class: "ico" }, icon(iconName)), h("h3", null, title), h("p", null, text),
     actions.length ? h("div", { class: "actions" }, ...actions) : null);
+}
+
+/** Says which drive a page is limited to, with a way back to every drive. */
+export function scopeNote(what: string): HTMLElement | null {
+  const d = currentDrive();
+  if (!d) return null;
+  return h("div", { class: "scope-note" }, icon("drive"),
+    h("span", null, `${what} on ${d.label || "Local Disk"} (${driveName(d.root)}) only ·`),
+    h("a", { href: "#", onclick: (e: Event) => { e.preventDefault(); setDrive(""); } }, "Show all drives"));
 }
 
 export function note(text: Child, tone: "info" | "warn" = "info"): HTMLElement {

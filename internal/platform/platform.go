@@ -84,10 +84,17 @@ type Platform interface {
 	UserName() string
 
 	Drives() []Drive
+	// DriveOf returns the root of the drive that holds path (like D:\), or ""
+	// when path is not on a lettered drive.
+	DriveOf(path string) string
+	// DriveRoot returns the folder to scan for a drive root like D:\.
+	DriveRoot(root string) string
 	Processes() []Process
 
-	RecycleBinInfo() (size int64, items int64, err error)
-	EmptyRecycleBin() error
+	// RecycleBinInfo and EmptyRecycleBin work on one drive's Recycle Bin, or
+	// on every drive when root is "".
+	RecycleBinInfo(root string) (size int64, items int64, err error)
+	EmptyRecycleBin(root string) error
 	// Recycle moves files or folders to the Recycle Bin.
 	Recycle(paths []string) error
 	// RecycleLimit reports the largest item (bytes) the Recycle Bin of the

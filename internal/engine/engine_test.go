@@ -23,7 +23,7 @@ func noProgress(Progress) {}
 
 func TestJunkScanAndClean(t *testing.T) {
 	e := demoEngine(t)
-	res, err := e.ScanJunk(context.Background(), noProgress)
+	res, err := e.ScanJunk(context.Background(), "", noProgress)
 	if err != nil {
 		t.Fatal(err)
 	}

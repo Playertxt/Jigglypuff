@@ -266,7 +266,8 @@ func (g *Guard) CheckService(name, imagePath string) error {
 	if exe == "" || !filepath.IsAbs(exe) {
 		return errors.New("the service has no clear program path")
 	}
-	if platform.Within(exe, g.p.WinDir) {
+	// The real Windows folder counts too: %SystemRoot% always expands to it.
+	if platform.Within(exe, g.p.WinDir) || platform.Within(exe, os.Getenv("SystemRoot")) {
 		return errors.New("Windows services are protected")
 	}
 	return nil

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"jigglypuff/internal/engine"
@@ -85,7 +86,11 @@ func (s *Server) buildPlan(req PlanRequest) (*Plan, error) {
 			}
 			if r.Special == "recyclebin" {
 				if r.Size > 0 || r.Files > 0 {
-					targets = append(targets, engine.Target{Kind: "recyclebin", Path: "Recycle Bin", Size: r.Size, Files: r.Files, Group: r.Name, Purpose: engine.PurposeJunk})
+					name := "Recycle Bin"
+					if r.Drive != "" {
+						name += " (" + strings.TrimRight(r.Drive, `\`) + ")"
+					}
+					targets = append(targets, engine.Target{Kind: "recyclebin", Path: name, Root: r.Drive, Size: r.Size, Files: r.Files, Group: r.Name, Purpose: engine.PurposeJunk})
 				}
 				continue
 			}

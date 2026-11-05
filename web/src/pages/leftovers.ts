@@ -1,7 +1,7 @@
 import { cancelJob, LeftoverGroup, Progress, runJob } from "../api.js";
 import { fmtBytes, h, icon, plural, relTime } from "../dom.js";
 import { Page, rerender, store } from "../store.js";
-import { btn, checkbox, confidenceBadge, empty, note, reviewAndClean, scanningCard, showError } from "../ui.js";
+import { btn, checkbox, confidenceBadge, empty, note, reviewAndClean, scanningCard, scopeNote, showError } from "../ui.js";
 import { leftoverRow } from "./apps.js";
 
 let scanning = false;
@@ -15,7 +15,7 @@ export async function scanLeftovers(): Promise<void> {
   scanning = true;
   rerender("leftovers");
   try {
-    const job = await runJob<{ scanId: string; groups: LeftoverGroup[] | null }>("/api/scan/orphans", {}, (p) => update?.(p), (id) => (jobId = id));
+    const job = await runJob<{ scanId: string; groups: LeftoverGroup[] | null }>("/api/scan/orphans", { drive: store.drive }, (p) => update?.(p), (id) => (jobId = id));
     if (job.state === "done" && job.result) {
       store.orphans = { scanId: job.result.scanId, groups: job.result.groups ?? [] };
       selected = new Set();
@@ -100,6 +100,8 @@ export const leftoversPage: Page = {
       h("div", { class: "actions" },
         btn("Scan again", { kind: "ghost", icon: "refresh", disabled: scanning, onclick: scanLeftovers }),
         btn(selected.size ? `Remove ${selected.size} selected` : "Remove selected", { kind: "danger", icon: "trash", disabled: scanning || !selected.size, onclick: remove }))));
+    const scope = scopeNote("Leftovers");
+    if (scope) root.append(scope);
     if (scanning) {
       const card = scanningCard("Looking for leftovers…", () => jobId && cancelJob(jobId));
       update = card.update;

@@ -1,6 +1,6 @@
 import { dispatchJobEvent, eventsURL, get, Info, initKey, Job, post } from "./api.js";
 import { clear, h, icon } from "./dom.js";
-import { currentPage, go, onNavigate, registerPage, rerender, setRoot, store } from "./store.js";
+import { currentPage, driveName, go, onDriveChange, onNavigate, registerPage, rerender, setDrive, setRoot, store } from "./store.js";
 import { btn, showError } from "./ui.js";
 import { applyTheme } from "./theme.js";
 import { overviewPage } from "./pages/overview.js";
@@ -27,6 +27,18 @@ const NAV: Array<{ id: string; label: string; icon: string } | null> = [
 
 for (const p of [overviewPage, cleanerPage, appsPage, leftoversPage, largePage, duplicatesPage, startupPage, historyPage, settingsPage]) registerPage(p);
 
+/** Picks which drive every scan looks at. Hidden on a PC with a single drive. */
+function drivePicker(info: Info): HTMLElement | null {
+  if (info.drives.length < 2) return null;
+  const sel = h("select", { class: "input", id: "drive-select", onchange: (e: Event) => setDrive((e.target as HTMLSelectElement).value) },
+    h("option", { value: "" }, "All drives"),
+    info.drives.map((d) => h("option", { value: d.root }, `${d.label || "Local Disk"} (${driveName(d.root)})`)));
+  sel.value = store.drive;
+  onDriveChange((d) => (sel.value = d));
+  return h("div", { class: "drive-pick" },
+    h("label", { for: "drive-select" }, icon("drive"), h("span", null, "Drive to scan")), sel);
+}
+
 function sidebar(info: Info): HTMLElement {
   const items = new Map<string, HTMLElement>();
   const item = (n: { id: string; label: string; icon: string }) => {
@@ -43,6 +55,7 @@ function sidebar(info: Info): HTMLElement {
       info.canElevate ? btn("Restart as admin", { size: "sm", onclick: restartAdmin }) : null);
   const el = h("nav", { class: "sidebar", "aria-label": "Sections" },
     h("div", { class: "brand" }, mark, h("span", null, "Jigglypuff")),
+    drivePicker(info),
     NAV.map((n) => (n ? item(n) : h("div", { class: "nav-gap" }))),
     h("div", { class: "sidebar-foot" },
       item({ id: "history", label: "History", icon: "clock" }),

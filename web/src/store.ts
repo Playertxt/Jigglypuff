@@ -1,5 +1,5 @@
 // Shared state and navigation.
-import type { App, DupGroup, FileItem, HistoryEntry, Info, JunkResult, LeftoverGroup, Settings, SmartResult, StartupItem } from "./api.js";
+import type { App, Drive, DupGroup, FileItem, HistoryEntry, Info, JunkResult, LeftoverGroup, Program, Settings, SmartResult, StartupItem } from "./api.js";
 
 export const store = {
   info: null as Info | null,
@@ -14,7 +14,44 @@ export const store = {
   storeApps: null as App[] | null,
   startup: null as StartupItem[] | null,
   history: null as HistoryEntry[] | null,
+  /** The drive every scan looks at (a root like D:\); "" means every drive. */
+  drive: "",
+  software: null as { drive: string; programs: Program[] } | null,
 };
+
+const driveListeners: Array<(d: string) => void> = [];
+
+/** Runs fn whenever a different drive is picked. */
+export function onDriveChange(fn: (d: string) => void): void {
+  driveListeners.push(fn);
+}
+
+/** Picks the drive to scan. Results from the old drive no longer apply, so they're dropped. */
+export function setDrive(d: string): void {
+  if (d === store.drive) return;
+  store.drive = d;
+  store.smart = store.junk = store.orphans = store.old = store.large = store.dups = store.software = null;
+  for (const fn of driveListeners) fn(d);
+  rerender();
+}
+
+/** The selected drive, or null for every drive. */
+export function currentDrive(): Drive | null {
+  return store.info?.drives.find((x) => x.root === store.drive) ?? null;
+}
+
+/** "Data (D:)" when path is a whole drive, else the folder's own name. */
+export function folderLabel(path: string): string {
+  const d = store.info?.drives.find((x) => x.path.toLowerCase() === path.toLowerCase() || x.root.toLowerCase() === path.toLowerCase());
+  if (d) return `${d.label || "Local Disk"} (${driveName(d.root)})`;
+  const parts = path.split(/[\\/]/).filter(Boolean);
+  return parts[parts.length - 1] ?? path;
+}
+
+/** "D:" for a drive root like D:\ */
+export function driveName(root: string): string {
+  return root.replace(/\\$/, "");
+}
 
 export interface Page {
   id: string;

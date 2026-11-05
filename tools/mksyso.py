@@ -32,13 +32,13 @@ def node(key, value=b"", wtype=0, vlen=0, children=()):
     return struct.pack("<H", len(b)) + b[2:]
 
 strings = {
-    "CompanyName": "Kabir", "FileDescription": "Jigglypuff - PC cleaner", "FileVersion": "1.0.0",
+    "CompanyName": "Kabir", "FileDescription": "Jigglypuff - PC cleaner", "FileVersion": "1.1.0",
     "InternalName": "Jigglypuff", "LegalCopyright": "(c) 2026 Kabir", "OriginalFilename": "Jigglypuff.exe",
-    "ProductName": "Jigglypuff", "ProductVersion": "1.0.0",
+    "ProductName": "Jigglypuff", "ProductVersion": "1.1.0",
 }
 table = node("040904B0", wtype=1, children=[
     node(k, u16(v), 1, len(v) + 1) for k, v in strings.items()])
-fixed = struct.pack("<13I", 0xFEEF04BD, 0x00010000, 0x00010000, 0, 0x00010000, 0,
+fixed = struct.pack("<13I", 0xFEEF04BD, 0x00010000, 0x00010001, 0, 0x00010001, 0,
                     0x3F, 0, 0x40004, 1, 0, 0, 0)
 version = node("VS_VERSION_INFO", fixed, 0, len(fixed), [
     node("StringFileInfo", wtype=1, children=[table]),

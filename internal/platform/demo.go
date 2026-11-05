@@ -92,13 +92,42 @@ func (d *demoPlatform) Processes() []Process {
 	return []Process{{1, "explorer.exe", ""}, {2, "chrome.exe", ""}, {3, "Discord.exe", ""}, {4, "msedge.exe", ""}}
 }
 
-func (d *demoPlatform) RecycleBinInfo() (int64, int64, error) {
+// The demo keeps each drive in a folder named after its letter: <root>\C, <root>\D.
+func (d *demoPlatform) DriveOf(path string) string {
+	rel, err := filepath.Rel(d.root, path)
+	if err != nil || rel == "." || strings.HasPrefix(rel, "..") {
+		return ""
+	}
+	letter := strings.SplitN(rel, string(filepath.Separator), 2)[0]
+	if len(letter) != 1 {
+		return ""
+	}
+	return strings.ToUpper(letter) + `:\`
+}
+
+func (d *demoPlatform) DriveRoot(root string) string {
+	if len(root) < 2 || root[1] != ':' {
+		return root
+	}
+	return filepath.Join(d.root, strings.ToUpper(root[:1]))
+}
+
+// Only the demo's C: drive has anything in its Recycle Bin.
+func demoRecycleDrive(root string) bool { return root == "" || strings.EqualFold(root, `C:\`) }
+
+func (d *demoPlatform) RecycleBinInfo(root string) (int64, int64, error) {
+	if !demoRecycleDrive(root) {
+		return 0, 0, nil
+	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.recycleBytes, d.recycleItems, nil
 }
 
-func (d *demoPlatform) EmptyRecycleBin() error {
+func (d *demoPlatform) EmptyRecycleBin(root string) error {
+	if !demoRecycleDrive(root) {
+		return nil
+	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	time.Sleep(300 * time.Millisecond)
@@ -275,6 +304,9 @@ func (b *demoBuilder) file(path string, size int64, age time.Duration, seed int6
 	if size < int64(len(head)) {
 		head = head[:size]
 	}
+	if size > int64(len(head)) {
+		setSparse(f) // so a 6 GB demo file takes no real disk space on NTFS
+	}
 	f.Write(head)
 	if size > int64(len(head)) {
 		f.Truncate(size)
@@ -376,6 +408,36 @@ func (d *demoPlatform) build() error {
 			b.file(j(a.install, "settings.ini"), 2*kb, ago(5), 0)
 		}
 	}
+	// The D: drive: one installed app, a Steam library and some portable programs.
+	dd := j(d.root, "D")
+	blender := j(dd, "Program Files", "Blender Foundation", "Blender 4.2")
+	bkey := `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{F5C3B2A1-6D4E-4F0A-9B8C-7E6D5C4B3A21}`
+	r.str(bkey, "DisplayName", "Blender 4.2")
+	r.str(bkey, "Publisher", "Blender Foundation")
+	r.str(bkey, "DisplayVersion", "4.2.3")
+	r.str(bkey, "InstallDate", "20241012")
+	r.str(bkey, "InstallLocation", blender)
+	r.str(bkey, "DisplayIcon", j(blender, "blender.exe")+",0")
+	r.dword(bkey, "EstimatedSize", 1100*1024)
+	r.dword(bkey, "WindowsInstaller", 1)
+	r.str(bkey, "UninstallString", "MsiExec.exe /X{F5C3B2A1-6D4E-4F0A-9B8C-7E6D5C4B3A21}")
+	b.file(j(blender, "blender.exe"), 180*mb, ago(24), 0)
+	b.file(j(blender, "4.2", "datafiles", "studiolights.dat"), 300*mb, ago(24), 0)
+	steamapps := j(dd, "SteamLibrary", "steamapps", "common")
+	b.file(j(steamapps, "Hades", "x64", "Hades.exe"), 30*mb, ago(70), 0)
+	b.file(j(steamapps, "Hades", "Content", "Packages.pkg"), 14*gb, ago(70), 0)
+	b.file(j(steamapps, "Celeste", "Celeste.exe"), 9*mb, ago(200), 0)
+	b.file(j(steamapps, "Celeste", "Content", "Atlases.data"), 1200*mb, ago(200), 0)
+	b.file(j(dd, "SteamLibrary", "libraryfolder.vdf"), 1*kb, ago(5), 0)
+	b.file(j(dd, "PortableApps", "GIMPPortable", "GIMPPortable.exe"), 4*mb, ago(40), 0)
+	b.file(j(dd, "PortableApps", "GIMPPortable", "App", "gimp", "bin", "gimp-2.10.exe"), 25*mb, ago(40), 0)
+	b.file(j(dd, "PortableApps", "GIMPPortable", "App", "gimp", "share", "data.pak"), 380*mb, ago(40), 0)
+	b.file(j(dd, "Tools", "ffmpeg", "bin", "ffmpeg.exe"), 130*mb, ago(15), 0)
+	b.file(j(dd, "Tools", "ffmpeg", "bin", "ffprobe.exe"), 130*mb, ago(15), 0)
+	b.file(j(dd, "Tools", "Rufus", "rufus-4.6.exe"), 2*mb, ago(120), 0)
+	b.files(j(dd, "Photos", "2024"), 40, 6*gb, ago(90), ".jpg")
+	b.file(j(dd, "Backups", "laptop-backup-2023.zip"), 9*gb, ago(400), 0)
+
 	// Figma and Postman have no size in the registry: Jigglypuff measures them.
 	b.file(j(local, "Figma", "app-124.5.6", "Figma.exe"), 160*mb, ago(10), 0)
 	b.file(j(local, "Postman", "app-11.18.0", "Postman.exe"), 210*mb, ago(10), 0)

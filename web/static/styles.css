@@ -342,3 +342,20 @@ details.more summary::-webkit-details-marker { display: none; }
   .search .input { width: 170px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Drive picker in the sidebar */
+.drive-pick { display: flex; flex-direction: column; gap: 6px; padding: 0 10px 14px; }
+.drive-pick label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.drive-pick label svg.i { width: 14px; height: 14px; }
+.drive-pick select { width: 100%; height: 32px; font-size: 13px; }
+.card.drive.pickable { cursor: default; transition: box-shadow .12s; }
+.card.drive.pickable:hover { box-shadow: 0 0 0 1px var(--border-strong), var(--shadow); }
+.card.drive.on { box-shadow: 0 0 0 2px var(--accent-text); }
+.drive-tag { flex: none; font-size: 11.5px; font-weight: 500; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; font-variant-numeric: tabular-nums; }
+.scope-note { display: flex; align-items: center; gap: 8px; margin: -4px 0 14px; font-size: 13px; color: var(--text-2); }
+.scope-note svg.i { width: 15px; height: 15px; color: var(--muted); }
+.scope-note a { color: var(--accent-text); cursor: default; text-decoration: none; }
+.scope-note a:hover { text-decoration: underline; }
+@media (max-width: 860px) {
+  .drive-pick { display: none; } /* no room in the narrow sidebar: pick a drive from the Overview's drive cards */
+}

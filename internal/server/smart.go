@@ -35,14 +35,15 @@ var groupTitles = map[string][2]string{
 	"developer": {"Developer caches", "code"},
 }
 
-// smartScan runs the quick scans and turns them into recommendations.
-func (s *Server) smartScan(ctx context.Context, pr engine.ProgressFunc) (any, error) {
+// smartScan runs the quick scans and turns them into recommendations. When
+// drive is set (like D:\) it only looks at that drive.
+func (s *Server) smartScan(ctx context.Context, drive string, pr engine.ProgressFunc) (any, error) {
 	step := func(n int64, msg string) {
 		pr(engine.Progress{Phase: "smart", Message: msg, Done: n, Total: 4})
 	}
 	st := s.state
 	step(0, "Looking for junk files")
-	junk, err := s.eng.ScanJunk(ctx, func(p engine.Progress) {
+	junk, err := s.eng.ScanJunk(ctx, drive, func(p engine.Progress) {
 		pr(engine.Progress{Phase: "smart", Message: p.Message, Done: 0, Total: 4, Bytes: p.Bytes})
 	})
 	if err != nil {
@@ -54,9 +55,9 @@ func (s *Server) smartScan(ctx context.Context, pr engine.ProgressFunc) (any, er
 	st.mu.Unlock()
 
 	step(1, "Looking for leftovers of removed apps")
-	orphans := s.eng.OrphanLeftovers(ctx, func(p engine.Progress) {
+	orphans := s.eng.LeftoversOnDrive(s.eng.OrphanLeftovers(ctx, func(p engine.Progress) {
 		pr(engine.Progress{Phase: "smart", Message: "Leftovers: " + filepath.Base(p.Message), Done: 1, Total: 4})
-	})
+	}), drive)
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -67,14 +68,19 @@ func (s *Server) smartScan(ctx context.Context, pr engine.ProgressFunc) (any, er
 
 	step(2, "Checking your Downloads folder")
 	set := s.eng.Settings()
-	old := s.eng.OldDownloads(ctx, set.OldDownloadDays)
+	old := s.oldOnDrive(s.eng.OldDownloads(ctx, set.OldDownloadDays), drive)
 	oldID := newID()
 	st.mu.Lock()
 	st.oldID, st.old = oldID, old
 	st.mu.Unlock()
 
-	step(3, "Checking startup apps")
-	startup := s.eng.StartupItems()
+	// Startup apps and Windows.old belong to the Windows drive.
+	system := s.eng.OnDrive(s.P.Paths().SystemDrive+string(filepath.Separator), drive)
+	var startup []*engine.StartupItem
+	if system {
+		step(3, "Checking startup apps")
+		startup = s.eng.StartupItems()
+	}
 
 	var recs []Rec
 	// Junk, one recommendation per group.
@@ -171,8 +177,16 @@ func (s *Server) smartScan(ctx context.Context, pr engine.ProgressFunc) (any, er
 		recs = append(recs, Rec{ID: "startup", Kind: "review", Icon: "rocket", Page: "startup",
 			Title: fmt.Sprintf("%d apps start with Windows", on), Desc: "Turning off the ones you don't need makes sign-in faster.", Count: on, Safety: "review"})
 	}
+	if drive != "" {
+		name := strings.TrimRight(drive, `\`)
+		recs = append(recs,
+			Rec{ID: "drive-large", Kind: "review", Icon: "fileBig", Page: "large",
+				Title: "See what's taking up space on " + name, Desc: "Find the biggest files anywhere on this drive.", Safety: "review"},
+			Rec{ID: "drive-software", Kind: "review", Icon: "grid", Page: "apps",
+				Title: "See the software installed on " + name, Desc: "Installed apps, games and portable programs on this drive.", Safety: "review"})
+	}
 	wold := filepath.Join(s.P.Paths().SystemDrive+string(filepath.Separator), "Windows.old")
-	if platform.IsDir(wold) {
+	if system && platform.IsDir(wold) {
 		recs = append(recs, Rec{ID: "windows-old", Kind: "info", Icon: "windows", Action: "storage",
 			Title: "A previous Windows installation is taking up space",
 			Desc:  "Windows removes it safely: open Storage settings → Temporary files → Previous Windows installation(s)."})
@@ -195,7 +209,7 @@ func (s *Server) smartScan(ctx context.Context, pr engine.ProgressFunc) (any, er
 	}
 	return map[string]any{
 		"recs": recs, "recommended": total, "junkScanId": junkID, "orphanScanId": orphID, "oldScanId": oldID,
-		"junk": junk, "orphans": orphans, "old": old, "drives": s.P.Drives(), "time": time.Now(),
+		"junk": junk, "orphans": orphans, "old": old, "drives": s.drives(), "time": time.Now(), "drive": drive,
 	}, nil
 }
 

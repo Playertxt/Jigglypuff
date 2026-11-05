@@ -1,7 +1,7 @@
 import { cancelJob, JunkResult, post, runJob } from "../api.js";
 import { fmtBytes, fmtNum, h, icon, plural, shortPath } from "../dom.js";
 import { Page, rerender, store } from "../store.js";
-import { badge, btn, checkbox, empty, reviewAndClean, safetyBadge, scanningCard, showError } from "../ui.js";
+import { badge, btn, checkbox, empty, reviewAndClean, safetyBadge, scanningCard, scopeNote, showError } from "../ui.js";
 
 let scanning = false;
 let jobId = "";
@@ -32,7 +32,7 @@ export async function scanJunk(): Promise<void> {
   scanning = true;
   rerender("cleaner");
   try {
-    const job = await runJob<{ scanId: string; categories: JunkResult[] }>("/api/scan/junk", {}, (p) => update?.(p), (id) => (jobId = id));
+    const job = await runJob<{ scanId: string; categories: JunkResult[] }>("/api/scan/junk", { drive: store.drive }, (p) => update?.(p), (id) => (jobId = id));
     if (job.state === "done" && job.result) store.junk = job.result;
   } catch (e) {
     showError(e);
@@ -132,6 +132,8 @@ export const cleanerPage: Page = {
       h("div", { class: "actions" },
         btn("Scan again", { kind: "ghost", icon: "refresh", disabled: scanning, onclick: scanJunk }),
         btn(total > 0 ? `Clean ${fmtBytes(total)}` : "Clean selected", { kind: "primary", icon: "broom", disabled: scanning || count === 0, onclick: clean }))));
+    const scope = scopeNote("Junk");
+    if (scope) root.append(scope);
     if (scanning) {
       const card = scanningCard("Looking for junk…", () => jobId && cancelJob(jobId));
       update = card.update;

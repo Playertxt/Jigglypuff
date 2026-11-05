@@ -88,6 +88,16 @@ func (w *winPlatform) Drives() []Drive {
 	return drives
 }
 
+func (w *winPlatform) DriveOf(path string) string {
+	v := filepath.VolumeName(path)
+	if len(v) != 2 || v[1] != ':' {
+		return "" // UNC share or relative path
+	}
+	return strings.ToUpper(v) + `\`
+}
+
+func (w *winPlatform) DriveRoot(root string) string { return root }
+
 // Processes ----------------------------------------------------------------------
 
 func (w *winPlatform) Processes() []Process {
@@ -123,20 +133,32 @@ type shQueryRBInfo struct {
 	numItems int64
 }
 
-func (w *winPlatform) RecycleBinInfo() (int64, int64, error) {
+// rootPtr passes a drive root to the shell's Recycle Bin calls (nil = all drives).
+func rootPtr(root string) *uint16 {
+	if root == "" {
+		return nil
+	}
+	return u16(root)
+}
+
+func (w *winPlatform) RecycleBinInfo(root string) (int64, int64, error) {
 	info := shQueryRBInfo{cbSize: uint32(unsafe.Sizeof(shQueryRBInfo{}))}
 	var hr uintptr
-	withCOM(func() { hr, _, _ = procSHQueryRecycleBinW.Call(0, uintptr(unsafe.Pointer(&info))) })
+	rp := rootPtr(root)
+	withCOM(func() {
+		hr, _, _ = procSHQueryRecycleBinW.Call(uintptr(unsafe.Pointer(rp)), uintptr(unsafe.Pointer(&info)))
+	})
 	if hr != 0 {
 		return 0, 0, fmt.Errorf("could not read the Recycle Bin (0x%x)", hr)
 	}
 	return info.size, info.numItems, nil
 }
 
-func (w *winPlatform) EmptyRecycleBin() error {
-	size, _, _ := w.RecycleBinInfo()
+func (w *winPlatform) EmptyRecycleBin(root string) error {
+	size, _, _ := w.RecycleBinInfo(root)
 	var hr uintptr
-	withCOM(func() { hr, _, _ = procSHEmptyRecycleBinW.Call(0, 0, 0x1|0x2|0x4) })
+	rp := rootPtr(root)
+	withCOM(func() { hr, _, _ = procSHEmptyRecycleBinW.Call(0, uintptr(unsafe.Pointer(rp)), 0x1|0x2|0x4) })
 	if hr != 0 && size > 0 {
 		return fmt.Errorf("could not empty the Recycle Bin (0x%x)", hr)
 	}

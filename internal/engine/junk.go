@@ -67,6 +67,7 @@ type JunkResult struct {
 	Running   []string       `json:"running,omitempty"`
 	Locations []JunkLocation `json:"locations"`
 	Special   string         `json:"special,omitempty"`
+	Drive     string         `json:"drive,omitempty"` // the drive scanned, "" = every drive
 
 	Items []JunkFile `json:"-"`
 }
@@ -354,8 +355,9 @@ func prettyName(s string) string {
 	return s
 }
 
-// ScanJunk measures every junk category. It never deletes anything.
-func (e *Engine) ScanJunk(ctx context.Context, progress ProgressFunc) ([]*JunkResult, error) {
+// ScanJunk measures every junk category. It never deletes anything. When
+// drive is set (like D:\) only junk on that drive is counted.
+func (e *Engine) ScanJunk(ctx context.Context, drive string, progress ProgressFunc) ([]*JunkResult, error) {
 	cats := e.JunkCategories()
 	running := e.processNames()
 	admin := e.P.IsAdmin()
@@ -370,7 +372,7 @@ func (e *Engine) ScanJunk(ctx context.Context, progress ProgressFunc) ([]*JunkRe
 		}
 		progress(Progress{Phase: "junk", Message: c.Name, Done: int64(i), Total: int64(len(cats)), Bytes: total})
 		r := &JunkResult{ID: c.ID, Name: c.Name, Group: c.Group, Desc: c.Desc, Note: c.Note, Safety: c.Safety,
-			Admin: c.Admin, Default: c.Default, Recycle: c.Recycle, Available: admin || !c.Admin, Special: c.Special}
+			Admin: c.Admin, Default: c.Default, Recycle: c.Recycle, Available: admin || !c.Admin, Special: c.Special, Drive: drive}
 		for _, pn := range c.Procs {
 			if running[lower(pn)] {
 				r.Running = append(r.Running, pn)
@@ -382,11 +384,14 @@ func (e *Engine) ScanJunk(ctx context.Context, progress ProgressFunc) ([]*JunkRe
 		}
 		switch c.Special {
 		case "recyclebin":
-			if size, n, err := e.P.RecycleBinInfo(); err == nil {
+			if size, n, err := e.P.RecycleBinInfo(drive); err == nil {
 				r.Size, r.Files = size, int(n)
 			}
 		case "shortcuts":
 			for _, s := range e.BrokenShortcuts(ctx) {
+				if !e.OnDrive(s.Path, drive) {
+					continue
+				}
 				r.Items = append(r.Items, s)
 				r.Size += s.Size
 				r.Files++
@@ -396,6 +401,9 @@ func (e *Engine) ScanJunk(ctx context.Context, progress ProgressFunc) ([]*JunkRe
 		locs := map[string]*JunkLocation{}
 		for _, rule := range c.Rules {
 			rule := rule
+			if !e.OnDrive(rule.Root, drive) {
+				continue
+			}
 			skipDir := func(string) bool { return !rule.Recursive }
 			_ = walk(ctx, rule.Root, skipDir, func(path string, info fs.FileInfo) error {
 				if rule.Pattern != "" {
@@ -439,7 +447,7 @@ func (e *Engine) ScanJunk(ctx context.Context, progress ProgressFunc) ([]*JunkRe
 			r.Locations = r.Locations[:30]
 		}
 		total += r.Size
-		if r.Size > 0 || c.Special != "" || c.Group == "system" {
+		if r.Size > 0 || c.Special != "" || (c.Group == "system" && (drive == "" || e.OnDrive(e.P.Paths().SystemDrive, drive))) {
 			results = append(results, r)
 		}
 	}

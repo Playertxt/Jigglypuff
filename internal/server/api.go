@@ -32,7 +32,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	})
 	mux.HandleFunc("GET /api/events", s.handleEvents)
 	mux.HandleFunc("GET /api/info", s.handleInfo)
-	mux.HandleFunc("GET /api/drives", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, s.P.Drives()) })
+	mux.HandleFunc("GET /api/drives", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, s.drives()) })
 	mux.HandleFunc("POST /api/settings", s.handleSettings)
 
 	mux.HandleFunc("POST /api/scan/{kind}", s.handleScan)
@@ -164,7 +164,7 @@ func (s *Server) handleInfo(w http.ResponseWriter, r *http.Request) {
 		"kind":       s.P.Kind(),
 		"canElevate": s.opts.RestartAdmin != nil && !s.P.IsAdmin(),
 		"settings":   s.eng.Settings(),
-		"drives":     s.P.Drives(),
+		"drives":     s.drives(),
 		"dataDir":    p.JigglypuffData,
 		"paths": map[string]string{
 			"userProfile": p.UserProfile, "desktop": p.Desktop, "documents": p.Documents, "downloads": p.Downloads,
@@ -219,8 +219,14 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 		Days    int      `json:"days"`
 		Folders []string `json:"folders"`
 		MinKB   int      `json:"minKB"`
+		Drive   string   `json:"drive"` // like D:\, "" = every drive
 	}
 	if err := readJSON(r, &body); err != nil {
+		writeErr(w, 400, err)
+		return
+	}
+	drive, err := s.checkDrive(body.Drive)
+	if err != nil {
 		writeErr(w, 400, err)
 		return
 	}
@@ -230,7 +236,7 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 	switch r.PathValue("kind") {
 	case "junk":
 		j = s.jobs.start("junk", false, func(ctx context.Context, pr engine.ProgressFunc) (any, error) {
-			res, err := s.eng.ScanJunk(ctx, pr)
+			res, err := s.eng.ScanJunk(ctx, drive, pr)
 			if err != nil {
 				return nil, err
 			}
@@ -238,11 +244,11 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 			st.mu.Lock()
 			st.junkID, st.junk = id, res
 			st.mu.Unlock()
-			return map[string]any{"scanId": id, "categories": res}, nil
+			return map[string]any{"scanId": id, "categories": res, "drive": drive}, nil
 		})
 	case "orphans":
 		j = s.jobs.start("orphans", false, func(ctx context.Context, pr engine.ProgressFunc) (any, error) {
-			groups := s.eng.OrphanLeftovers(ctx, pr)
+			groups := s.eng.LeftoversOnDrive(s.eng.OrphanLeftovers(ctx, pr), drive)
 			if ctx.Err() != nil {
 				return nil, ctx.Err()
 			}
@@ -250,10 +256,13 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 			st.mu.Lock()
 			st.orphansID, st.orphans = id, groups
 			st.mu.Unlock()
-			return map[string]any{"scanId": id, "groups": groups}, nil
+			return map[string]any{"scanId": id, "groups": groups, "drive": drive}, nil
 		})
 	case "large":
 		folder := body.Folder
+		if folder == "" && drive != "" {
+			folder = s.P.DriveRoot(drive)
+		}
 		if folder == "" {
 			folder = s.P.Paths().UserProfile
 		}
@@ -278,7 +287,7 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 			days = set.OldDownloadDays
 		}
 		j = s.jobs.start("old", false, func(ctx context.Context, pr engine.ProgressFunc) (any, error) {
-			files := s.eng.OldDownloads(ctx, days)
+			files := s.oldOnDrive(s.eng.OldDownloads(ctx, days), drive)
 			id := newID()
 			st.mu.Lock()
 			st.oldID, st.old = id, files
@@ -289,7 +298,14 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 		folders := body.Folders
 		if len(folders) == 0 {
 			p := s.P.Paths()
-			folders = []string{p.Desktop, p.Documents, p.Downloads, p.Pictures, p.Music, p.Videos}
+			for _, f := range []string{p.Desktop, p.Documents, p.Downloads, p.Pictures, p.Music, p.Videos} {
+				if s.eng.OnDrive(f, drive) {
+					folders = append(folders, f)
+				}
+			}
+			if len(folders) == 0 {
+				folders = []string{s.P.DriveRoot(drive)} // a drive without your user folders
+			}
 		}
 		minKB := body.MinKB
 		if minKB <= 0 {
@@ -307,12 +323,72 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 			return map[string]any{"scanId": id, "groups": groups, "folders": folders}, nil
 		})
 	case "smart":
-		j = s.jobs.start("smart", false, s.smartScan)
+		j = s.jobs.start("smart", false, func(ctx context.Context, pr engine.ProgressFunc) (any, error) {
+			return s.smartScan(ctx, drive, pr)
+		})
+	case "software":
+		j = s.jobs.start("software", false, func(ctx context.Context, pr engine.ProgressFunc) (any, error) {
+			known := append(s.eng.InstalledApps(), s.eng.StoreApps()...)
+			var progs []*engine.Program
+			for _, d := range s.P.Drives() {
+				if drive != "" && d.Root != drive {
+					continue
+				}
+				progs = append(progs, s.eng.ProgramsOnDrive(ctx, d.Root, known, pr)...)
+				if ctx.Err() != nil {
+					return nil, ctx.Err()
+				}
+			}
+			sort.SliceStable(progs, func(a, b int) bool { return progs[a].Size > progs[b].Size })
+			return map[string]any{"drive": drive, "programs": progs}, nil
+		})
 	default:
 		writeErr(w, 404, errors.New("unknown scan"))
 		return
 	}
 	writeJSON(w, map[string]string{"jobId": j.ID})
+}
+
+// driveInfo is a drive plus the folder Jigglypuff scans for it.
+type driveInfo struct {
+	platform.Drive
+	Path string `json:"path"`
+}
+
+func (s *Server) drives() []driveInfo {
+	var out []driveInfo
+	for _, d := range s.P.Drives() {
+		out = append(out, driveInfo{d, s.P.DriveRoot(d.Root)})
+	}
+	return out
+}
+
+// checkDrive turns "d:" or "D:\" into a known fixed drive root, or "" for
+// every drive.
+func (s *Server) checkDrive(d string) (string, error) {
+	d = strings.TrimSpace(d)
+	if d == "" {
+		return "", nil
+	}
+	for _, dr := range s.P.Drives() {
+		if strings.EqualFold(strings.TrimRight(dr.Root, `\`), strings.TrimRight(d, `\`)) {
+			return dr.Root, nil
+		}
+	}
+	return "", errors.New("that drive isn't available")
+}
+
+func (s *Server) oldOnDrive(files []*engine.FileItem, drive string) []*engine.FileItem {
+	if drive == "" {
+		return files
+	}
+	var out []*engine.FileItem
+	for _, f := range files {
+		if s.eng.OnDrive(f.Path, drive) {
+			out = append(out, f)
+		}
+	}
+	return out
 }
 
 // Apps -----------------------------------------------------------------------------
@@ -631,18 +707,11 @@ func (s *Server) handleFS(w http.ResponseWriter, r *http.Request) {
 			{"Pictures", p.Pictures, "pictures"}, {"Videos", p.Videos, "videos"}, {"Music", p.Music, "music"}}
 		var drives []fsEntry
 		for _, d := range s.P.Drives() {
-			root := d.Root
-			if s.P.Kind() == "demo" {
-				root = p.SystemDrive
-			}
 			name := strings.TrimRight(d.Root, `\`)
 			if d.Label != "" {
 				name = d.Label + " (" + name + ")"
 			}
-			drives = append(drives, fsEntry{name, root, "drive"})
-			if s.P.Kind() == "demo" {
-				break
-			}
+			drives = append(drives, fsEntry{name, s.P.DriveRoot(d.Root), "drive"})
 		}
 		writeJSON(w, map[string]any{"places": places, "drives": drives})
 		return

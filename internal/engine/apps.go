@@ -31,6 +31,7 @@ type App struct {
 	Broken          bool   `json:"broken"` // its uninstaller is missing
 	CanUninstall    bool   `json:"canUninstall"`
 	HasIcon         bool   `json:"hasIcon"`
+	Drive           string `json:"drive,omitempty"` // like C:\, "" when unknown
 
 	UninstallCmd string   `json:"-"`
 	QuietCmd     string   `json:"-"`
@@ -160,6 +161,7 @@ func (e *Engine) InstalledApps() []*App {
 				continue
 			}
 			seen[dedupe] = true
+			a.Drive = e.appDrive(a)
 			apps = append(apps, a)
 		}
 	}
@@ -216,6 +218,7 @@ func (e *Engine) StoreApps() []*App {
 		}
 		a.IconPath = storeLogo(s.Location)
 		a.HasIcon = a.IconPath != ""
+		a.Drive = e.P.DriveOf(s.Location)
 		apps = append(apps, a)
 	}
 	sort.Slice(apps, func(i, j int) bool { return lower(apps[i].Name) < lower(apps[j].Name) })

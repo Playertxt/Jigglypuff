@@ -204,7 +204,7 @@ func (e *Engine) Execute(ctx context.Context, targets []Target, backupDir string
 			res.Removed++
 			res.Done = append(res.Done, t.Path)
 		case "recyclebin":
-			if err := e.P.EmptyRecycleBin(); err != nil {
+			if err := e.P.EmptyRecycleBin(t.Root); err != nil {
 				res.fail("Recycle Bin", err)
 				continue
 			}

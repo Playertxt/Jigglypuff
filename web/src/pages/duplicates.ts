@@ -1,6 +1,6 @@
 import { cancelJob, DupGroup, post, Progress, runJob } from "../api.js";
 import { baseName, fmtBytes, fmtDate, h, icon, plural, relTime, shortPath } from "../dom.js";
-import { Page, rerender, store } from "../store.js";
+import { currentDrive, folderLabel, onDriveChange, Page, rerender, store } from "../store.js";
 import { badge, btn, checkbox, empty, pickFolder, recycleLabel, reviewAndClean, scanningCard, showError, toast } from "../ui.js";
 
 let scanning = false;
@@ -14,10 +14,18 @@ let showAll = false;
 function defaults(): void {
   if (!folders.length) {
     const p = store.info?.paths ?? {};
-    folders = (store.settings?.dupFolders?.length ? store.settings.dupFolders : [p.desktop, p.documents, p.downloads, p.pictures, p.music, p.videos]).filter(Boolean) as string[];
+    const d = currentDrive();
+    // A drive other than Windows' one has no user folders: look through all of it.
+    folders = d && !d.system ? [d.path]
+      : (store.settings?.dupFolders?.length ? store.settings.dupFolders : [p.desktop, p.documents, p.downloads, p.pictures, p.music, p.videos]).filter(Boolean) as string[];
   }
   if (!minKB) minKB = store.settings?.dupMinKB ?? 1024;
 }
+
+onDriveChange(() => {
+  folders = [];
+  selected = new Set();
+});
 
 /** Selects every copy except the oldest (or newest) one in each group. */
 function autoSelect(groups: DupGroup[], keep: "oldest" | "newest"): void {
@@ -114,7 +122,7 @@ export const duplicatesPage: Page = {
     root.append(h("div", { class: "card pad", style: "margin-bottom:14px" },
       h("div", { class: "field", style: "margin-bottom:10px" }, "Look in these folders"),
       h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center" },
-        folders.map((f) => h("span", { class: "chip", title: f }, icon("folder"), h("span", null, baseName(f)),
+        folders.map((f) => h("span", { class: "chip", title: f }, icon("folder"), h("span", null, folderLabel(f) || baseName(f)),
           h("button", { type: "button", title: "Remove", "aria-label": `Remove ${baseName(f)}`, onclick: () => { folders = folders.filter((x) => x !== f); rerender("duplicates"); } }, icon("x")))),
         btn("Add folder", { size: "sm", icon: "plus", onclick: async () => { const f = await pickFolder("Add a folder to check"); if (f && !folders.includes(f)) { folders.push(f); rerender("duplicates"); } } })),
       h("div", { style: "display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap" }, sizeSel, h("span", { style: "flex:1" }),

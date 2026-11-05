@@ -1,7 +1,7 @@
 // Talking to Jigglypuff's engine. Every request carries the per-session key.
 
 export interface Progress { phase: string; message: string; done: number; total: number; bytes: number }
-export interface Drive { root: string; label: string; total: number; free: number; system: boolean }
+export interface Drive { root: string; label: string; total: number; free: number; system: boolean; path: string }
 export interface Settings {
   theme: "system" | "light" | "dark"; recycleUserFiles: boolean; tempMinAgeHours: number; restorePoint: boolean;
   exclusions: string[] | null; largeMinMB: number; oldDownloadDays: number; dupMinKB: number; dupFolders: string[] | null;
@@ -25,7 +25,9 @@ export interface LeftoverGroup { key: string; name: string; items: Leftover[]; s
 export interface App {
   id: string; kind: string; name: string; publisher: string; version: string; installDate?: string; size: number;
   sizeKnown: boolean; installLocation?: string; scope: string; arch?: string; broken: boolean; canUninstall: boolean; hasIcon: boolean;
+  drive?: string;
 }
+export interface Program { id: string; name: string; kind: "program" | "game"; path: string; drive: string; exe?: string; size: number; partial?: boolean; modified: string }
 export interface FileItem { id: string; path: string; name: string; dir: string; size: number; modified: string; type: string }
 export interface DupGroup { id: string; size: number; wasted: number; files: FileItem[] }
 export interface StartupItem {
@@ -38,7 +40,7 @@ export interface Rec {
 }
 export interface SmartResult {
   recs: Rec[]; recommended: number; junkScanId: string; orphanScanId: string; oldScanId: string;
-  junk: JunkResult[]; orphans: LeftoverGroup[] | null; old: FileItem[] | null; drives: Drive[]; time: string;
+  junk: JunkResult[]; orphans: LeftoverGroup[] | null; old: FileItem[] | null; drives: Drive[]; time: string; drive: string;
 }
 export interface PlanGroup { label: string; items: number; bytes: number }
 export interface PlanPreview { kind: string; path: string; name?: string; size: number; recycle: boolean }

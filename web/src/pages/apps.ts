@@ -1,9 +1,12 @@
-import { App, cancelJob, get, iconURL, Leftover, post, runJob, UninstallResult } from "../api.js";
+import { App, cancelJob, get, iconURL, Leftover, post, Program, Progress, runJob, UninstallResult } from "../api.js";
 import { avatarColor, debounce, fmtBytes, fmtDate, h, icon, plural, shortPath } from "../dom.js";
-import { currentPage, Page, rerender, store } from "../store.js";
-import { badge, btn, checkbox, confidenceBadge, empty, openDialog, openMenu, reviewAndClean, showError, toast } from "../ui.js";
+import { currentDrive, currentPage, driveName, Page, rerender, store } from "../store.js";
+import { badge, btn, checkbox, confidenceBadge, empty, openDialog, openMenu, reviewAndClean, scanningCard, scopeNote, showError, toast } from "../ui.js";
 
-let tab: "desktop" | "store" = "desktop";
+let tab: "desktop" | "store" | "other" = "desktop";
+let loadingSoftware = false;
+let softwareJob = "";
+let softwareUpdate: ((p: Progress | null) => void) | null = null;
 let query = "";
 let sort: "name" | "size" | "date" = "name";
 let loading = false;
@@ -45,6 +48,53 @@ async function loadStore(refresh = false): Promise<void> {
     loadingStore = false;
     rerender("apps");
   }
+}
+
+/** Finds games and programs on the selected drive (or every drive) that aren't in Windows' list. */
+async function loadSoftware(): Promise<void> {
+  if (loadingSoftware) return;
+  loadingSoftware = true;
+  rerender("apps");
+  try {
+    const job = await runJob<{ drive: string; programs: Program[] | null }>("/api/scan/software", { drive: store.drive },
+      (p) => softwareUpdate?.(p), (id) => (softwareJob = id));
+    if (job.state === "done" && job.result) store.software = { drive: job.result.drive, programs: job.result.programs ?? [] };
+  } catch (e) {
+    showError(e);
+  } finally {
+    loadingSoftware = false;
+    softwareUpdate = null;
+    rerender("apps");
+  }
+}
+
+/** Whether an app is on the drive being looked at. */
+function onDrive(a: App): boolean {
+  return !store.drive || a.drive === store.drive;
+}
+
+function driveTag(root?: string): HTMLElement | null {
+  return !store.drive && root ? h("span", { class: "drive-tag", title: `Installed on ${driveName(root)}` }, driveName(root)) : null;
+}
+
+function programIcon(p: Program): HTMLElement {
+  const letter = h("div", { class: "app-icon", style: `background:${avatarColor(p.name)}` }, (p.name.trim()[0] ?? "?").toUpperCase());
+  if (!p.exe) return letter;
+  const img = h("img", { src: iconURL({ path: p.exe }), alt: "", loading: "lazy" });
+  const box = h("div", { class: "app-icon" }, img);
+  img.addEventListener("error", () => box.replaceWith(letter));
+  return box;
+}
+
+function programRow(p: Program): HTMLElement {
+  return h("div", { class: "row" },
+    programIcon(p),
+    h("div", { class: "grow" },
+      h("div", { class: "title" }, h("span", { class: "t" }, p.name), badge(p.kind === "game" ? "Game" : "Portable", "plain")),
+      h("div", { class: "desc selectable", title: p.path }, shortPath(p.path, 70))),
+    driveTag(p.drive),
+    h("div", { class: "size", title: p.partial ? "Still counting: this folder is very large" : undefined }, (p.partial ? "> " : "") + fmtBytes(p.size)),
+    btn("Open folder", { size: "sm", icon: "folder", onclick: () => post("/api/open", { path: p.path }).catch(showError) }));
 }
 
 function appIcon(a: App): HTMLElement {
@@ -254,9 +304,38 @@ function appRow(a: App): HTMLElement {
     h("div", { class: "grow" },
       h("div", { class: "title" }, h("span", { class: "t" }, a.name), a.broken ? badge("Uninstaller missing", "warn") : null),
       h("div", { class: "desc", title: meta }, meta || " ")),
+    driveTag(a.drive),
     h("div", { class: "size" + (a.sizeKnown ? "" : " muted") }, a.sizeKnown && a.size > 0 ? fmtBytes(a.size) : "—"),
     action,
     btn("", { kind: "ghost", size: "sm", iconOnly: true, icon: "more", title: "More", onclick: (e) => moreMenu(e, a) }));
+}
+
+function renderOther(root: HTMLElement): void {
+  if (loadingSoftware) {
+    const d = currentDrive();
+    const card = scanningCard(d ? `Looking through ${driveName(d.root)}…` : "Looking through your drives…", () => softwareJob && cancelJob(softwareJob));
+    softwareUpdate = (p) => card.update(p && { ...p, message: p.total ? `${p.done} of ${plural(p.total, "folder")} measured · ${p.message}` : p.message, bytes: 0 });
+    root.append(card.el);
+    return;
+  }
+  if (!store.software) {
+    if (!loadingSoftware) loadSoftware();
+    root.append(h("div", { class: "card" }, Array.from({ length: 4 }, () => h("div", { class: "skeleton" }))));
+    return;
+  }
+  const progs = store.software.programs;
+  const q = query.trim().toLowerCase();
+  let shown = progs.filter((p) => !q || p.name.toLowerCase().includes(q) || p.path.toLowerCase().includes(q));
+  shown = [...shown].sort((x, y) => sort === "size" ? y.size - x.size : sort === "date" ? y.modified.localeCompare(x.modified) : x.name.localeCompare(y.name));
+  const total = progs.reduce((a, p) => a + p.size, 0);
+  root.append(h("div", { class: "toolbar" }, h("span", null, `${plural(progs.length, "program")}${total ? ` · ${fmtBytes(total)}` : ""}`),
+    h("span", null, "· not in Windows' list of installed apps, so there's no uninstaller to run")));
+  if (!shown.length) {
+    root.append(h("div", { class: "card" }, empty("grid", q ? "No matching programs" : "Nothing else found",
+      q ? `Nothing matches “${query}”.` : "Every program Jigglypuff found here is already in the Desktop apps list.")));
+    return;
+  }
+  root.append(h("div", { class: "card" }, shown.map(programRow)));
 }
 
 const onSearch = debounce((v: string) => {
@@ -274,23 +353,37 @@ export const appsPage: Page = {
     if (!store.apps && !loading) loadApps();
   },
   render(root) {
-    const list = tab === "desktop" ? store.apps : store.storeApps;
+    const d = currentDrive();
+    const all = tab === "desktop" ? store.apps : tab === "store" ? store.storeApps : null;
+    const list = all ? all.filter(onDrive) : null;
     const search = h("div", { class: "search" }, icon("search"),
       h("input", { class: "input", id: "app-search", type: "search", placeholder: "Search apps", value: query, oninput: (e: Event) => onSearch((e.target as HTMLInputElement).value) }));
     const sorter = h("select", { class: "input", "aria-label": "Sort", onchange: (e: Event) => { sort = (e.target as HTMLSelectElement).value as typeof sort; rerender("apps"); } },
       h("option", { value: "name" }, "Sort by name"), h("option", { value: "size" }, "Sort by size"), h("option", { value: "date" }, "Sort by install date"));
     sorter.value = sort;
     root.append(h("div", { class: "page-head" },
-      h("div", { class: "titles" }, h("h1", null, "Apps"),
-        h("p", { class: "subtitle" }, "Uninstall apps completely. Jigglypuff runs each app's own uninstaller, then removes what it leaves behind.")),
+      h("div", { class: "titles" }, h("h1", null, d ? `Software on ${driveName(d.root)}` : "Apps"),
+        h("p", { class: "subtitle" }, d
+          ? `Everything installed on ${d.label || "Local Disk"} (${driveName(d.root)}): apps, Store apps, games and portable programs.`
+          : "Uninstall apps completely. Jigglypuff runs each app's own uninstaller, then removes what it leaves behind.")),
       h("div", { class: "actions" }, search, sorter,
-        btn("", { kind: "ghost", iconOnly: true, icon: "refresh", title: "Refresh", onclick: () => (tab === "desktop" ? loadApps(true) : loadStore(true)) }))));
+        btn("", { kind: "ghost", iconOnly: true, icon: "refresh", title: "Refresh", disabled: tab === "other" && loadingSoftware,
+          onclick: () => (tab === "desktop" ? loadApps(true) : tab === "store" ? loadStore(true) : loadSoftware()) }))));
+    const scope = scopeNote("Software");
+    if (scope) root.append(scope);
+    const count = (l: App[] | null) => (l ? h("span", { class: "n" }, String(l.filter(onDrive).length)) : null);
     const seg = h("div", { class: "seg", role: "tablist", style: "margin-bottom:14px" },
       h("button", { type: "button", class: tab === "desktop" ? "on" : "", role: "tab", onclick: () => { tab = "desktop"; rerender("apps"); } },
-        "Desktop apps", store.apps ? h("span", { class: "n" }, String(store.apps.length)) : null),
+        "Desktop apps", count(store.apps)),
       h("button", { type: "button", class: tab === "store" ? "on" : "", role: "tab", onclick: () => { tab = "store"; if (!store.storeApps && !loadingStore) loadStore(); else rerender("apps"); } },
-        "Microsoft Store apps", store.storeApps ? h("span", { class: "n" }, String(store.storeApps.length)) : null));
+        "Microsoft Store apps", count(store.storeApps)),
+      h("button", { type: "button", class: tab === "other" ? "on" : "", role: "tab", onclick: () => { tab = "other"; if (!store.software && !loadingSoftware) loadSoftware(); else rerender("apps"); } },
+        "Games & portable programs", store.software ? h("span", { class: "n" }, String(store.software.programs.length)) : null));
     root.append(seg);
+    if (tab === "other") {
+      renderOther(root);
+      return;
+    }
     const busy = tab === "desktop" ? loading : loadingStore;
     if (!list) {
       root.append(h("div", { class: "card" }, Array.from({ length: 6 }, () => h("div", { class: "skeleton" }))));

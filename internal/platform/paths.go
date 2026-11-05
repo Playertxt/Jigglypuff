@@ -34,7 +34,7 @@ type Paths struct {
 	CommonStartMenu string `json:"commonStartMenu"`
 	Startup         string `json:"startup"`
 	CommonStartup   string `json:"commonStartup"`
-	JigglypuffData       string `json:"jigglypuffData"` // Jigglypuff's own settings, history and backups
+	JigglypuffData  string `json:"jigglypuffData"` // Jigglypuff's own settings, history and backups
 	UserSID         string `json:"userSid"`
 	UserName        string `json:"userName"`
 }

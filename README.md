@@ -4,6 +4,7 @@ A careful, minimal PC cleaner for Windows 10 and 11. Jigglypuff is a single port
 
 ## Features
 
+- **Pick a drive to scan**: the *Drive to scan* menu in the sidebar (or a click on a drive card on the Overview) limits every scan to one drive: junk, leftovers, old downloads, large files, duplicates, the Recycle Bin and the software list. *All drives* scans everything, as before.
 - **Overview**: one scan, then a short list of recommendations. Everything marked *Safe* is pre-ticked. Anything that needs your judgement is listed separately.
 - **Junk cleaner**:
   - Windows: temp files, Windows temp, Windows Update cache, Delivery Optimization, error reports, crash dumps, old logs, thumbnail and shader caches, and broken shortcuts.
@@ -16,6 +17,7 @@ A careful, minimal PC cleaner for Windows 10 and 11. Jigglypuff is a single port
   2. It runs the app's own uninstaller and waits for every helper process the uninstaller starts.
   3. It hunts down what the app left behind: folders, shortcuts, registry keys, startup entries, services and scheduled tasks.
   - **Force remove** handles apps whose uninstaller is broken or missing.
+  - **Every program on a drive**: each app shows which drive it's installed on. With a drive picked, the page lists everything installed there. The *Games & portable programs* tab adds software that Windows' installed-apps list doesn't know about: Steam and Xbox games, portable apps and tools unzipped into a folder, each with its size and a button to open its folder.
 - **Leftovers**: finds folders and settings of apps you uninstalled long ago. It ignores anything an installed app, service, shortcut, scheduled task or running program still uses, and anything changed in the last 30 days.
 - **Large & old files**: finds the biggest files in any folder, plus old installers, archives and disk images sitting in Downloads.
 - **Duplicates**: compares file contents (SHA-256) and keeps at least one copy of every file.
